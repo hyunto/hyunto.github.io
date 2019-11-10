@@ -1,0 +1,556 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="즐거이 배우고 깊이 생각하라">
+    <title>Tag: Spring Framework - 즐거이 배우고 깊이 생각하라</title>
+    <meta name="author" content="hyunto">
+    
+    
+        <link rel="icon" href="https://hyunto.github.io/assets/images/favicon.ico">
+    
+    
+        <link rel="alternate" type="application/atom+xml" title="RSS" href="/atom.xml">
+    
+    <script type="application/ld+json">{}</script>
+    <meta name="description" content="즐거이 배우고 깊이 생각하라">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="즐거이 배우고 깊이 생각하라">
+<meta property="og:url" content="https://hyunto.github.io/tags/Spring-Framework/index.html">
+<meta property="og:site_name" content="즐거이 배우고 깊이 생각하라">
+<meta property="og:description" content="즐거이 배우고 깊이 생각하라">
+<meta property="og:locale" content="en">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="즐거이 배우고 깊이 생각하라">
+<meta name="twitter:description" content="즐거이 배우고 깊이 생각하라">
+    
+    
+        
+    
+    
+        <meta property="og:image" content="https://hyunto.github.io/assets/images/author.jpg">
+    
+    
+    
+    
+    <!--STYLES-->
+    <link rel="stylesheet" href="/assets/css/style-2dwn68oxrx7garnr65iriskewle1uhxjgd7vwi5ghcmktc2mzvq8clkrcp9l.min.css">
+    <!--STYLES END-->
+    
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+        ga('create', 'UA-113695151-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+
+    
+</head>
+
+    <body>
+        <div id="blog">
+            <!-- Define author's picture -->
+
+
+<header id="header" data-behavior="2">
+    <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+    <div class="header-title">
+        <a class="header-title-link" href="/ ">즐거이 배우고 깊이 생각하라</a>
+    </div>
+    
+        
+            <a class="header-right-icon open-algoria-search" href="#about">
+        
+        
+            <i class="fa fa-lg fa-search"></i>
+        
+        </a>
+    
+</header>
+
+            <!-- Define author's picture -->
+
+
+
+        
+    
+
+<nav id="sidebar" data-behavior="2">
+    <div class="sidebar-container">
+        
+            <div class="sidebar-profile">
+                <a href="/#about">
+                    <img class="sidebar-profile-picture" src="/assets/images/author.jpg" alt="Author&#39;s picture">
+                </a>
+                <h4 class="sidebar-profile-name">hyunto</h4>
+                
+                    <h5 class="sidebar-profile-bio"><p>호학심사(好學深思)<br>즐거이 배우고 깊이 생각하라</p>
+</h5>
+                
+            </div>
+        
+        
+            <ul class="sidebar-buttons">
+            
+                <li class="sidebar-button">
+                    
+                        <a class="sidebar-button-link " href="/ " title="Home">
+                    
+                        <i class="sidebar-button-icon fa fa-home" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Home</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a class="sidebar-button-link " href="/all-categories" title="Categories">
+                    
+                        <i class="sidebar-button-icon fa fa-bookmark" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Categories</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a class="sidebar-button-link " href="/all-tags" title="Tags">
+                    
+                        <i class="sidebar-button-icon fa fa-tags" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Tags</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a class="sidebar-button-link " href="/all-archives" title="Archives">
+                    
+                        <i class="sidebar-button-icon fa fa-archive" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Archives</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a class="sidebar-button-link open-algolia-search" href="#search" title="Search">
+                    
+                        <i class="sidebar-button-icon fa fa-search" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Search</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a class="sidebar-button-link " href="#about" title="About">
+                    
+                        <i class="sidebar-button-icon fa fa-question" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">About</span>
+                    </a>
+            </li>
+            
+        </ul>
+        
+            <ul class="sidebar-buttons">
+            
+                <li class="sidebar-button">
+                    
+                        <a class="sidebar-button-link " href="https://github.com/hyunto" target="_blank" rel="external nofollow noopener noreferrer" title="GitHub">
+                    
+                        <i class="sidebar-button-icon fab fa-github" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">GitHub</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a class="sidebar-button-link " href="https://blog.naver.com/eqelizer" target="_blank" rel="external nofollow noopener noreferrer" title="Previous Blog">
+                    
+                        <i class="sidebar-button-icon fas fa-paper-plane" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Previous Blog</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a class="sidebar-button-link " href="mailto:jhyunto@gmail.com" target="_blank" rel="external nofollow noopener noreferrer" title="Mail">
+                    
+                        <i class="sidebar-button-icon fa fa-envelope" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Mail</span>
+                    </a>
+            </li>
+            
+        </ul>
+        
+            <ul class="sidebar-buttons">
+            
+                <li class="sidebar-button">
+                    
+                        <a class="sidebar-button-link " href="/atom.xml" title="RSS">
+                    
+                        <i class="sidebar-button-icon fa fa-rss" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">RSS</span>
+                    </a>
+            </li>
+            
+        </ul>
+        
+    </div>
+</nav>
+
+            
+            <div id="main" data-behavior="2" class="
+                        hasCoverMetaIn
+                        ">
+                
+    <section class="postShorten-group main-content-wrap">
+    
+    
+    <article class="postShorten postShorten--thumbnailimg-right">
+        <div class="postShorten-wrap">
+            
+            <div class="postShorten-header">
+                <h1 class="postShorten-title">
+                    
+                        <a class="link-unstyled" href="/2019/03/13/springframework-testing-private-method/">
+                            Private 메소드 테스트하기
+                        </a>
+                    
+                </h1>
+                <div class="postShorten-meta">
+    <time datetime="2019-03-13T15:08:30+09:00">
+	
+		    Mar 13, 2019
+    	
+    </time>
+    
+        <span>in </span>
+        
+    <a class="category-link" href="/categories/Programming/">Programming</a>
+
+
+    
+</div>
+
+            </div>
+            
+                <div class="postShorten-excerpt">
+                    <p>단위 테스트 작성시 Private 접근자를 가진 메소드를 테스트하는 방법을 정리합니다.</p>
+                    
+                        <a href="/2019/03/13/springframework-testing-private-method/" class="postShorten-excerpt_link link">
+                            Continue reading
+                        </a>
+                        
+                    
+                </div>
+            
+        </div>
+        
+    </article>
+    
+    <div class="pagination-bar">
+    <ul class="pagination">
+        
+        
+        <li class="pagination-number">page 1 of 1</li>
+    </ul>
+</div>
+
+</section>
+
+
+                <footer id="footer" class="main-content-wrap">
+    <span class="copyrights">
+        Copyrights &copy; 2019 hyunto. All Rights Reserved.
+    </span>
+</footer>
+
+            </div>
+            
+        </div>
+        
+
+
+    
+        
+    
+
+<div id="about">
+    <div id="about-card">
+        <div id="about-btn-close">
+            <i class="fa fa-times"></i>
+        </div>
+        
+            <img id="about-card-picture" src="/assets/images/author.jpg" alt="Author&#39;s picture">
+        
+            <h4 id="about-card-name">hyunto</h4>
+        
+            <div id="about-card-bio"><p>호학심사(好學深思)<br>즐거이 배우고 깊이 생각하라</p>
+</div>
+        
+        
+            <div id="about-card-job">
+                <i class="fa fa-briefcase"></i>
+                <br>
+                <p>Software Engineer</p>
+
+            </div>
+        
+        
+            <div id="about-card-location">
+                <i class="fa fa-map-marker"></i>
+                <br>
+                Republic of Korea, Seoul
+            </div>
+        
+    </div>
+</div>
+
+        
+            <div id="algolia-search-modal" class="modal-container">
+    <div class="modal">
+        <div class="modal-header">
+            <span class="close-button"><i class="fa fa-close"></i></span>
+            <a href="https://algolia.com" target="_blank" rel="external nofollow noopener noreferrer" class="searchby-algolia text-color-light link-unstyled">
+                <span class="searchby-algolia-text text-color-light text-small">by</span>
+                <img class="searchby-algolia-logo" src="https://www.algolia.com/static_assets/images/press/downloads/algolia-light.svg">
+            </a>
+            <i class="search-icon fa fa-search"></i>
+            <form id="algolia-search-form">
+                <input type="text" id="algolia-search-input" name="search" class="form-control input--large search-input" placeholder="Search ">
+            </form>
+        </div>
+        <div class="modal-body">
+            <div class="no-result text-color-light text-center">no post found</div>
+            <div class="results">
+                
+                <div class="media">
+                    
+                    <div class="media-body">
+                        <a class="link-unstyled" href="https://hyunto.github.io/2018/07/26/Hexo-사용법/">
+                            <h3 class="media-heading">Hexo 사용법</h3>
+                        </a>
+                        <span class="media-meta">
+                            <span class="media-date text-small">
+                                
+                                    Jul 26, 2018
+                                
+                            </span>
+                        </span>
+                        <div class="media-content hide-xs font-merryweather"><p>2018년 초, Hexo를 사용해 이 블로그를 만들었으나 집, 회사 PC에서 블로그 Source를 다운받아 Deploy하는 과정에서 여러번 블로그를 망가뜨려 버렸습니다.<br>같은 실수를 반복하지 않기 위해 블로그 소스코드 다운, 빌드, 배포와 글을 작성하는 방법을 간단히 정리합니다.</p></div>
+                    </div>
+                    <div style="clear:both;"></div>
+                    <hr>
+                </div>
+                
+                <div class="media">
+                    
+                    <div class="media-body">
+                        <a class="link-unstyled" href="https://hyunto.github.io/2018/07/27/자주-사용하는-Docker-명령어-정리/">
+                            <h3 class="media-heading">자주 사용하는 Docker 명령어 정리</h3>
+                        </a>
+                        <span class="media-meta">
+                            <span class="media-date text-small">
+                                
+                                    Jul 27, 2018
+                                
+                            </span>
+                        </span>
+                        <div class="media-content hide-xs font-merryweather"><p>업무 중 자주 사용되는 Docker CLI명령어와 Dockerfile 키워드를 정리합니다.<br>또한 업무중 겪었던 Docker 관련 이슈를 정리합니다.</p></div>
+                    </div>
+                    <div style="clear:both;"></div>
+                    <hr>
+                </div>
+                
+                <div class="media">
+                    
+                    <div class="media-left">
+                        <a class="link-unstyled" href="https://hyunto.github.io/2018/11/16/Book-Review-자바-ORM-표준-JPA-프로그래밍/">
+                            <img class="media-image" src="https://hyunto.github.io/2018/11/16/Book-Review-자바-ORM-표준-JPA-프로그래밍/book_cover.png" width="90" height="90">
+                        </a>
+                    </div>
+                    
+                    <div class="media-body">
+                        <a class="link-unstyled" href="https://hyunto.github.io/2018/11/16/Book-Review-자바-ORM-표준-JPA-프로그래밍/">
+                            <h3 class="media-heading">[Book Review] 자바 ORM 표준 JPA 프로그래밍</h3>
+                        </a>
+                        <span class="media-meta">
+                            <span class="media-date text-small">
+                                
+                                    Nov 16, 2018
+                                
+                            </span>
+                        </span>
+                        <div class="media-content hide-xs font-merryweather"><p>자바 ORM 표준 JPA 프로그래밍 (2015) 독서/스터디 후기</p></div>
+                    </div>
+                    <div style="clear:both;"></div>
+                    <hr>
+                </div>
+                
+                <div class="media">
+                    
+                    <div class="media-body">
+                        <a class="link-unstyled" href="https://hyunto.github.io/2018/12/03/Java8-Behavior-Parameterization/">
+                            <h3 class="media-heading">동작 파라미터화 (Behavior Parameterization)</h3>
+                        </a>
+                        <span class="media-meta">
+                            <span class="media-date text-small">
+                                
+                                    Dec 3, 2018
+                                
+                            </span>
+                        </span>
+                        <div class="media-content hide-xs font-merryweather"><p><code>동작 파라미터화 (Behavior Parameterization)</code> 는 “다양한 동작을 수행할 수 있는 코드 블럭을 메서드 파라미터로 전달”함으로써 자주 변경되는 요구사항에 효과적으로 대응할 수 있는 방식을 의미합니다.</p>
+<p>여기서는 자주 변경되는 요구사항의 예시를 기반으로 동작 파라미터화를 한 후 Java8에서 추가된 Lambda로 코드를 간소화하는 과정을 보여줍니다.</p></div>
+                    </div>
+                    <div style="clear:both;"></div>
+                    <hr>
+                </div>
+                
+                <div class="media">
+                    
+                    <div class="media-body">
+                        <a class="link-unstyled" href="https://hyunto.github.io/2018/12/11/git-secret/">
+                            <h3 class="media-heading">git-secret</h3>
+                        </a>
+                        <span class="media-meta">
+                            <span class="media-date text-small">
+                                
+                                    Dec 11, 2018
+                                
+                            </span>
+                        </span>
+                        <div class="media-content hide-xs font-merryweather"><p>비밀번호, Secret Key 값과 같이 보호되야 하는 데이터가 포함된 파일을 그냥 Git Commit &amp; Push 하면 개인적인 데이터가 노출되는 문제점이 발생합니다.</p>
+<p><code>git-secret</code> 을 사용하면 개인적인 데이터가 포함된 파일을 암호화 한 후에 Git 저장소에 저장함으로써 문제점을 해결할 수 있습니다.</p></div>
+                    </div>
+                    <div style="clear:both;"></div>
+                    <hr>
+                </div>
+                
+                <div class="media">
+                    
+                    <div class="media-body">
+                        <a class="link-unstyled" href="https://hyunto.github.io/2019/01/15/introduction-to-oauth2.0/">
+                            <h3 class="media-heading">OAuth 2.0 - 기본개념 및 Authorization Grant</h3>
+                        </a>
+                        <span class="media-meta">
+                            <span class="media-date text-small">
+                                
+                                    Jan 15, 2019
+                                
+                            </span>
+                        </span>
+                        <div class="media-content hide-xs font-merryweather"><p>최근 OAuth 2.0에 대해 공부하면서 다양한 Grant 종류가 존재함을 알게 되었습니다.<br>기본 개념과 Grant 종류에 대해 잘 정리되어 OAuth 2.0 이해에 도움됬던 사이트들의 내용을 정리합니다.</p></div>
+                    </div>
+                    <div style="clear:both;"></div>
+                    <hr>
+                </div>
+                
+                <div class="media">
+                    
+                    <div class="media-body">
+                        <a class="link-unstyled" href="https://hyunto.github.io/2019/02/11/java8-lambda/">
+                            <h3 class="media-heading">람다 표현식 (Lambda Expression)</h3>
+                        </a>
+                        <span class="media-meta">
+                            <span class="media-date text-small">
+                                
+                                    Feb 11, 2019
+                                
+                            </span>
+                        </span>
+                        <div class="media-content hide-xs font-merryweather"><p>Java8에서 새롭게 추가된 람다 표현식을 정리합니다.</p></div>
+                    </div>
+                    <div style="clear:both;"></div>
+                    <hr>
+                </div>
+                
+                <div class="media">
+                    
+                    <div class="media-body">
+                        <a class="link-unstyled" href="https://hyunto.github.io/2019/02/12/java8-stream-basic/">
+                            <h3 class="media-heading">스트림(Stream) 소개</h3>
+                        </a>
+                        <span class="media-meta">
+                            <span class="media-date text-small">
+                                
+                                    Feb 12, 2019
+                                
+                            </span>
+                        </span>
+                        <div class="media-content hide-xs font-merryweather"><p>Java8에서 새로 추가된 스트림의 기초를 정리합니다.</p></div>
+                    </div>
+                    <div style="clear:both;"></div>
+                    <hr>
+                </div>
+                
+                <div class="media">
+                    
+                    <div class="media-body">
+                        <a class="link-unstyled" href="https://hyunto.github.io/2019/02/17/java8-stream-practice/">
+                            <h3 class="media-heading">스트림(Stream) 활용</h3>
+                        </a>
+                        <span class="media-meta">
+                            <span class="media-date text-small">
+                                
+                                    Feb 17, 2019
+                                
+                            </span>
+                        </span>
+                        <div class="media-content hide-xs font-merryweather"><p>Java8 Stream 활용 방안을 정리합니다.</p></div>
+                    </div>
+                    <div style="clear:both;"></div>
+                    <hr>
+                </div>
+                
+                <div class="media">
+                    
+                    <div class="media-body">
+                        <a class="link-unstyled" href="https://hyunto.github.io/2019/03/13/springframework-testing-private-method/">
+                            <h3 class="media-heading">Private 메소드 테스트하기</h3>
+                        </a>
+                        <span class="media-meta">
+                            <span class="media-date text-small">
+                                
+                                    Mar 13, 2019
+                                
+                            </span>
+                        </span>
+                        <div class="media-content hide-xs font-merryweather"><p>단위 테스트 작성시 Private 접근자를 가진 메소드를 테스트하는 방법을 정리합니다.</p></div>
+                    </div>
+                    <div style="clear:both;"></div>
+                    <hr>
+                </div>
+                
+            </div>
+        </div>
+        <div class="modal-footer">
+            <p class="results-count text-medium" data-message-zero="no post found" data-message-one="1 post found" data-message-other="{n} posts found">
+                10 posts found
+            </p>
+        </div>
+    </div>
+</div>
+
+        
+        
+<div id="cover" style="background-image:url('/assets/images/cover_the_legend_of_zelda.jpg');"></div>
+        <!--SCRIPTS-->
+<script src="/assets/js/script-x2vft4khydnm3fle5k6i00lpg0w2a1yxes6bmk6mdnvmeqzmtipaw6lhf8rx.min.js"></script>
+<!--SCRIPTS END-->
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.14.1/moment-with-locales.min.js"></script>
+    <script src="//cdn.jsdelivr.net/algoliasearch/3/algoliasearch.min.js"></script>
+    <script>
+        var algoliaClient = algoliasearch('XKYZJU6GUU', '6f712de882b0c14f1ba276f5970d1d44');
+        var algoliaIndex = algoliaClient.initIndex('hyunto.github.io');
+    </script>
+
+
+    </body>
+</html>

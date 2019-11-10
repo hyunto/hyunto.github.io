@@ -1,0 +1,806 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="즐거이 배우고 깊이 생각하라">
+    <title>동작 파라미터화 (Behavior Parameterization) - 즐거이 배우고 깊이 생각하라</title>
+    <meta name="author" content="hyunto">
+    
+    
+        <link rel="icon" href="https://hyunto.github.io/assets/images/favicon.ico">
+    
+    
+        <link rel="alternate" type="application/atom+xml" title="RSS" href="/atom.xml">
+    
+    <script type="application/ld+json">{"@context":"http://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"hyunto","sameAs":["https://github.com/hyunto","https://blog.naver.com/eqelizer","mailto:jhyunto@gmail.com"],"image":"author.jpg"},"articleBody":"동작 파라미터화 (Behavior Parameterization) 는 “다양한 동작을 수행할 수 있는 코드 블럭을 메서드 파라미터로 전달”함으로써 자주 변경되는 요구사항에 효과적으로 대응할 수 있는 방식을 의미합니다.\n여기서는 자주 변경되는 요구사항의 예시를 기반으로 동작 파라미터화를 한 후 Java8에서 추가된 Lambda로 코드를 간소화하는 과정을 보여줍니다.\n\n\n요구사항우리는 농장 재고 애플리케이션을 개발합니다. 농부는 녹색 사과 만 필터링 하는 기능을 추가하길 원했습니다.\n시도 1 : 녹색 사과 필터링아래와 같이 녹색 사과만 필터링하는 메서드를 구현했습니다.그런데 농부가 빨간 사과 를 필터링하는 기능을 추가하길 원했습니다. \n123456789public static List&lt;Apple&gt; filterGreenApples(List&lt;Apple&gt; inventory) &#123;    List&lt;Apple&gt; result = new ArrayList&lt;&gt;();    for (Apple apple : inventory) &#123;        if (\"green\".equals(apple.getColor())) &#123;            result.add(apple);        &#125;    &#125;    return result;&#125;\n\n시도 2 : 색을 파라미터화메서드의 파라미터로 색을 추가하여 유연하게 개선했습니다.그런데 이번엔  150g 이상 무게가 나가는 사과 를 필터링하길 원했습니다. 즉, 필터의 기준이 계속해서 변경될 가능성이 존재합니다.\n아래와 같이 파라미터(color, weight)를 다르게 하여 원하는 결과를 얻을 수 있지만 중복된 코드가 존재합니다.\n12345678910111213141516171819202122232425/** * 색(Color)를 기준으로 필터링 */public static List&lt;Apple&gt; filterApplesByColor(List&lt;Apple&gt; inventory, String color) &#123;    List&lt;Apple&gt; result = new ArrayList&lt;&gt;();    for (Apple apple : inventory) &#123;        if (apple.getColor().equals(color)) &#123;            result.add(apple);        &#125;    &#125;    return result;&#125;/** * 무게(Weight)를 기준으로 필터링 */public static List&lt;Apple&gt; filterApplesByWeight(List&lt;Apple&gt; inventory, int weight) &#123;    List&lt;Apple&gt; result = new ArrayList&lt;&gt;();    for (Apple apple : inventory) &#123;        if (apple.getWeight() &gt; weight) &#123;            result.add(apple);        &#125;    &#125;    return result;&#125;\n\n시도 3 : 가능한 모든 속성으로 필터링앞서 농부가 요구했던 “색”과 “무게” 요구사항을 모두 합친 필터링 메서드를 구현합니다.그러나 이 방식은 많은 문제점이 존재합니다.\n만약 농부가 “150g 이상의 빨간 사과를 필터링”하고 싶어 한다면 또다시 코드가 중복되는 비슷한 메서드를 추가하거나, 조건절이 늘어나는 거대한 메서드를 만들게 될 것입니다.또한 파라미터의 flag 값의 의미를 단번에 알 수 없습니다.\n1234567891011121314public static List&lt;Apple&gt; filterApples(List&lt;Apple&gt; inventory, String color,                                        int weight, boolean flag) &#123;    List&lt;Apple&gt; result = new ArrayList&lt;&gt;();    for (Apple apple : inventory) &#123;        if ((flag &amp;&amp; apple.getColor().equals(color))             || (!flag &amp;&amp; apple.getWeight() &gt; weight)) &#123;            result.add(apple);        &#125;    &#125;    return result;&#125;List&lt;Apple&gt; greenApples = filterApples(inventory, \"green\", 0, true);List&lt;Apple&gt; heavyApples = filterApples(inventory, \"\", 150, false);\n\n시도 4 : 동작 파라미터화사과의 어떤 속성에 기초하여 Boolena 값을 반환하는 메서드를 가진 인터페이스를 사용합니다. 이와 같은 동작을 프레디케이트 (Predicate) 라고 합니다.\n\nPredicate 의 사전적 의미는 “술어” 입니다.술어 의 사전적 의미는 “논리의 판단. 명제에서 주사에 대하여 긍정 또는 부정의 입언을 하는 개념” 입니다.\n\n아래의 예제에선 전략 디자인 패턴 (Strategy Design Pattern) 을 사용하여 사과를 선택하는 조건을 캡슐화 했습니다.전략 디자인 패턴 (Strategy Design Pattern)은 각 알고리즘을 캡슐화하는 알고리즘 패밀리를 정의해 두고, 런타임에 알고리즘을 선택하는 기법입니다.여기서 “알고리즘 패밀리”는 AppleHeavyWeightPredicate 메서드와 AppleGreenColorPredicate 메서드`가 됩니다.\n만약 농부가 새로운 필터링 조건을 요구하더라도 ApplePredicate 인터페이스 를 구현하는 메서드를 추가하면 됩니다.이와 같이 메서드의 파라미터로 코드 블럭을 전달함으로써 메서드의 동작을 파라미터화 한 것 입니다.\n12345678910111213141516171819202122232425262728293031323334353637public interface ApplePredicate &#123;    boolean test (Apple apple);&#125;public class AppleHeavyWeightPredicate implements ApplePredicate &#123;    public boolean test(Apple apple) &#123;        return apple.getWeight() &gt; 150;    &#125; &#125;public class AppleGreenColorPredicate implements ApplePredicate &#123;    public boolean test(Apple apple) &#123;        return \"green\".equals(apple.getColor());    &#125;&#125;// 색과 무게를 동시에 필터링 조건으로 갖는 메서드(전략 or 알고리즘 패밀리) 추가public class AppleRedAndHeavyPredicate implements ApplePredicate &#123;    public boolean test(Apple apple) &#123;        return \"red\".equals(apple.getColor()) &amp;&amp; apple.getWeight() &gt; 150;    &#125;&#125;public static List&lt;Apple&gt; filterApples(List&lt;Apple&gt; inventory, ApplePredicate p) &#123;    List&lt;Apple&gt; result = new ArrayList&lt;&gt;();    for (Apple apple : inventory) &#123;        if (p.test(apple)) &#123;            result.add(apple);        &#125;    &#125;    return result;&#125;// 녹색 사과만 필터링List&lt;Apple&gt; greeApples = filterApples(inventory, new AppleGreenColorPredicate());// 무게가 150g 이상인 사과만 필터링List&lt;Apple&gt; heavyApples = filterApples(inventory, new AppleHeavyWeightPredicate());\n\n시도 5 : 익명 클래스를 통한 코드 간소화앞선 예제는 동작 파라미터화를 위해 여러 개의 클래스를 정의했습니다.익명 클래스 (Anonymous Class) 를 통해 클래스 정의 없이 필터링 구현이 가능합니다.\n그러나 자칫하면 익명 클래스로 인해 코드가 장황해져 유지보수가 어려워 질 수 있습니다.\n123456// 빨간 사과만 필터링List&lt;Apple&gt; redApples = filterApples(inventory, new ApplePredicate() &#123;    public boolean test(Apple apple) &#123;        return \"red\".equals(apple.getColor());    &#125; &#125;);\n\n시도 6 : 람다 표현식 사용자바8의 람다 표현식으로 위 예제 코드를 간단하게 구현할 수 있습니다.\n1List&lt;Apple&gt; redApples = filterApples(inventory, (Apple apple) -&gt; \"red\".equals(apple.getColor()));\n\n시도 7 : 리스트 형식으로 추상화사과 이외에도 다양한 물건을 필터링 할 수 있도록 추상화 할 수 있습니다. (Generic 사용)\n123456789101112131415161718public interface Predicate&lt;T&gt; &#123;    boolean test(T t);&#125;public static &lt;T&gt; List&lt;T&gt; filter(List&lt;T&gt; list, Predicate&lt;T&gt; p) &#123;    List&lt;T&gt; result = new ArrayList&lt;&gt;();    for (T e: list) &#123;        if (p.test(e)) &#123;            result.add(e);        &#125;    &#125;    return result;&#125;// 빨간 사과 필터링List&lt;Apple&gt; redApples = filter(inventory, (Apple apple) -&gt; \"red\".equals(apple.getColor()));// 짝수 필터링List&lt;String&gt; evenNumbers = filter(numbers, (Integer i) -&gt; i % 2 == 0);\n\n","dateCreated":"2018-12-03T23:51:31+09:00","dateModified":"2019-08-08T23:23:01+09:00","datePublished":"2018-12-03T23:51:31+09:00","description":"동작 파라미터화 (Behavior Parameterization) 는 “다양한 동작을 수행할 수 있는 코드 블럭을 메서드 파라미터로 전달”함으로써 자주 변경되는 요구사항에 효과적으로 대응할 수 있는 방식을 의미합니다.\n여기서는 자주 변경되는 요구사항의 예시를 기반으로 동작 파라미터화를 한 후 Java8에서 추가된 Lambda로 코드를 간소화하는 과정을 보여줍니다.","headline":"동작 파라미터화 (Behavior Parameterization)","image":[],"mainEntityOfPage":{"@type":"WebPage","@id":"https://hyunto.github.io/2018/12/03/Java8-Behavior-Parameterization/"},"publisher":{"@type":"Organization","name":"hyunto","sameAs":["https://github.com/hyunto","https://blog.naver.com/eqelizer","mailto:jhyunto@gmail.com"],"image":"author.jpg","logo":{"@type":"ImageObject","url":"author.jpg"}},"url":"https://hyunto.github.io/2018/12/03/Java8-Behavior-Parameterization/","keywords":"Java, Java8"}</script>
+    <meta name="description" content="동작 파라미터화 (Behavior Parameterization) 는 “다양한 동작을 수행할 수 있는 코드 블럭을 메서드 파라미터로 전달”함으로써 자주 변경되는 요구사항에 효과적으로 대응할 수 있는 방식을 의미합니다. 여기서는 자주 변경되는 요구사항의 예시를 기반으로 동작 파라미터화를 한 후 Java8에서 추가된 Lambda로 코드를 간소화하는 과정을 보여">
+<meta name="keywords" content="Java,Java8">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="동작 파라미터화 (Behavior Parameterization)">
+<meta property="og:url" content="https://hyunto.github.io/2018/12/03/Java8-Behavior-Parameterization/index.html">
+<meta property="og:site_name" content="즐거이 배우고 깊이 생각하라">
+<meta property="og:description" content="동작 파라미터화 (Behavior Parameterization) 는 “다양한 동작을 수행할 수 있는 코드 블럭을 메서드 파라미터로 전달”함으로써 자주 변경되는 요구사항에 효과적으로 대응할 수 있는 방식을 의미합니다. 여기서는 자주 변경되는 요구사항의 예시를 기반으로 동작 파라미터화를 한 후 Java8에서 추가된 Lambda로 코드를 간소화하는 과정을 보여">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2019-08-08T14:23:01.942Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="동작 파라미터화 (Behavior Parameterization)">
+<meta name="twitter:description" content="동작 파라미터화 (Behavior Parameterization) 는 “다양한 동작을 수행할 수 있는 코드 블럭을 메서드 파라미터로 전달”함으로써 자주 변경되는 요구사항에 효과적으로 대응할 수 있는 방식을 의미합니다. 여기서는 자주 변경되는 요구사항의 예시를 기반으로 동작 파라미터화를 한 후 Java8에서 추가된 Lambda로 코드를 간소화하는 과정을 보여">
+    
+    
+        
+    
+    
+        <meta property="og:image" content="https://hyunto.github.io/assets/images/author.jpg">
+    
+    
+    
+    
+    <!--STYLES-->
+    <link rel="stylesheet" href="/assets/css/style-2dwn68oxrx7garnr65iriskewle1uhxjgd7vwi5ghcmktc2mzvq8clkrcp9l.min.css">
+    <!--STYLES END-->
+    
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+        ga('create', 'UA-113695151-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+
+    
+</head>
+
+    <body>
+        <div id="blog">
+            <!-- Define author's picture -->
+
+
+<header id="header" data-behavior="2">
+    <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+    <div class="header-title">
+        <a class="header-title-link" href="/ ">즐거이 배우고 깊이 생각하라</a>
+    </div>
+    
+        
+            <a class="header-right-icon open-algoria-search" href="#about">
+        
+        
+            <i class="fa fa-lg fa-search"></i>
+        
+        </a>
+    
+</header>
+
+            <!-- Define author's picture -->
+
+
+
+        
+    
+
+<nav id="sidebar" data-behavior="2">
+    <div class="sidebar-container">
+        
+            <div class="sidebar-profile">
+                <a href="/#about">
+                    <img class="sidebar-profile-picture" src="/assets/images/author.jpg" alt="Author&#39;s picture">
+                </a>
+                <h4 class="sidebar-profile-name">hyunto</h4>
+                
+                    <h5 class="sidebar-profile-bio"><p>호학심사(好學深思)<br>즐거이 배우고 깊이 생각하라</p>
+</h5>
+                
+            </div>
+        
+        
+            <ul class="sidebar-buttons">
+            
+                <li class="sidebar-button">
+                    
+                        <a class="sidebar-button-link " href="/ " title="Home">
+                    
+                        <i class="sidebar-button-icon fa fa-home" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Home</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a class="sidebar-button-link " href="/all-categories" title="Categories">
+                    
+                        <i class="sidebar-button-icon fa fa-bookmark" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Categories</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a class="sidebar-button-link " href="/all-tags" title="Tags">
+                    
+                        <i class="sidebar-button-icon fa fa-tags" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Tags</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a class="sidebar-button-link " href="/all-archives" title="Archives">
+                    
+                        <i class="sidebar-button-icon fa fa-archive" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Archives</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a class="sidebar-button-link open-algolia-search" href="#search" title="Search">
+                    
+                        <i class="sidebar-button-icon fa fa-search" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Search</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a class="sidebar-button-link " href="#about" title="About">
+                    
+                        <i class="sidebar-button-icon fa fa-question" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">About</span>
+                    </a>
+            </li>
+            
+        </ul>
+        
+            <ul class="sidebar-buttons">
+            
+                <li class="sidebar-button">
+                    
+                        <a class="sidebar-button-link " href="https://github.com/hyunto" target="_blank" rel="external nofollow noopener noreferrer" title="GitHub">
+                    
+                        <i class="sidebar-button-icon fab fa-github" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">GitHub</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a class="sidebar-button-link " href="https://blog.naver.com/eqelizer" target="_blank" rel="external nofollow noopener noreferrer" title="Previous Blog">
+                    
+                        <i class="sidebar-button-icon fas fa-paper-plane" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Previous Blog</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a class="sidebar-button-link " href="mailto:jhyunto@gmail.com" target="_blank" rel="external nofollow noopener noreferrer" title="Mail">
+                    
+                        <i class="sidebar-button-icon fa fa-envelope" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Mail</span>
+                    </a>
+            </li>
+            
+        </ul>
+        
+            <ul class="sidebar-buttons">
+            
+                <li class="sidebar-button">
+                    
+                        <a class="sidebar-button-link " href="/atom.xml" title="RSS">
+                    
+                        <i class="sidebar-button-icon fa fa-rss" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">RSS</span>
+                    </a>
+            </li>
+            
+        </ul>
+        
+    </div>
+</nav>
+
+            
+            <div id="main" data-behavior="2" class="
+                        hasCoverMetaIn
+                        ">
+                
+<article class="post">
+    
+    
+        <div class="post-header main-content-wrap text-left">
+    
+        <h1 class="post-title">
+            동작 파라미터화 (Behavior Parameterization)
+        </h1>
+    
+    
+        <div class="post-meta">
+    <time datetime="2018-12-03T23:51:31+09:00">
+	
+		    Dec 03, 2018
+    	
+    </time>
+    
+        <span>in </span>
+        
+    <a class="category-link" href="/categories/Programming/">Programming</a>
+
+
+    
+</div>
+
+    
+</div>
+
+    
+    <div class="post-content markdown">
+        <div class="main-content-wrap">
+            <p><code>동작 파라미터화 (Behavior Parameterization)</code> 는 “다양한 동작을 수행할 수 있는 코드 블럭을 메서드 파라미터로 전달”함으로써 자주 변경되는 요구사항에 효과적으로 대응할 수 있는 방식을 의미합니다.</p>
+<p>여기서는 자주 변경되는 요구사항의 예시를 기반으로 동작 파라미터화를 한 후 Java8에서 추가된 Lambda로 코드를 간소화하는 과정을 보여줍니다.</p>
+<a id="more"></a>
+
+<h2 id="요구사항"><a href="#요구사항" class="headerlink" title="요구사항"></a>요구사항</h2><p>우리는 농장 재고 애플리케이션을 개발합니다. 농부는 <code>녹색 사과</code> 만 필터링 하는 기능을 추가하길 원했습니다.</p>
+<h2 id="시도-1-녹색-사과-필터링"><a href="#시도-1-녹색-사과-필터링" class="headerlink" title="시도 1 : 녹색 사과 필터링"></a>시도 1 : 녹색 사과 필터링</h2><p>아래와 같이 녹색 사과만 필터링하는 메서드를 구현했습니다.<br>그런데 농부가 <code>빨간 사과</code> 를 필터링하는 기능을 추가하길 원했습니다. </p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> List&lt;Apple&gt; <span class="title">filterGreenApples</span><span class="params">(List&lt;Apple&gt; inventory)</span> </span>&#123;</span><br><span class="line">    List&lt;Apple&gt; result = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">    <span class="keyword">for</span> (Apple apple : inventory) &#123;</span><br><span class="line">        <span class="keyword">if</span> (<span class="string">"green"</span>.equals(apple.getColor())) &#123;</span><br><span class="line">            result.add(apple);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="시도-2-색을-파라미터화"><a href="#시도-2-색을-파라미터화" class="headerlink" title="시도 2 : 색을 파라미터화"></a>시도 2 : 색을 파라미터화</h2><p>메서드의 파라미터로 색을 추가하여 유연하게 개선했습니다.<br>그런데 이번엔  <code>150g 이상 무게가 나가는 사과</code> 를 필터링하길 원했습니다. <em>즉, 필터의 기준이 계속해서 변경될 가능성이 존재합니다.</em></p>
+<p>아래와 같이 파라미터(color, weight)를 다르게 하여 원하는 결과를 얻을 수 있지만 중복된 코드가 존재합니다.</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 색(Color)를 기준으로 필터링</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> List&lt;Apple&gt; <span class="title">filterApplesByColor</span><span class="params">(List&lt;Apple&gt; inventory, String color)</span> </span>&#123;</span><br><span class="line">    List&lt;Apple&gt; result = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">    <span class="keyword">for</span> (Apple apple : inventory) &#123;</span><br><span class="line">        <span class="keyword">if</span> (apple.getColor().equals(color)) &#123;</span><br><span class="line">            result.add(apple);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 무게(Weight)를 기준으로 필터링</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> List&lt;Apple&gt; <span class="title">filterApplesByWeight</span><span class="params">(List&lt;Apple&gt; inventory, <span class="keyword">int</span> weight)</span> </span>&#123;</span><br><span class="line">    List&lt;Apple&gt; result = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">    <span class="keyword">for</span> (Apple apple : inventory) &#123;</span><br><span class="line">        <span class="keyword">if</span> (apple.getWeight() &gt; weight) &#123;</span><br><span class="line">            result.add(apple);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="시도-3-가능한-모든-속성으로-필터링"><a href="#시도-3-가능한-모든-속성으로-필터링" class="headerlink" title="시도 3 : 가능한 모든 속성으로 필터링"></a>시도 3 : 가능한 모든 속성으로 필터링</h2><p>앞서 농부가 요구했던 “색”과 “무게” 요구사항을 모두 합친 필터링 메서드를 구현합니다.<br>그러나 이 방식은 많은 문제점이 존재합니다.</p>
+<p>만약 농부가 “150g 이상의 빨간 사과를 필터링”하고 싶어 한다면 또다시 코드가 중복되는 비슷한 메서드를 추가하거나, 조건절이 늘어나는 거대한 메서드를 만들게 될 것입니다.<br>또한 파라미터의 <code>flag</code> 값의 의미를 단번에 알 수 없습니다.</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> List&lt;Apple&gt; <span class="title">filterApples</span><span class="params">(List&lt;Apple&gt; inventory, String color, </span></span></span><br><span class="line"><span class="function"><span class="params">                                       <span class="keyword">int</span> weight, <span class="keyword">boolean</span> flag)</span> </span>&#123;</span><br><span class="line">    List&lt;Apple&gt; result = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">    <span class="keyword">for</span> (Apple apple : inventory) &#123;</span><br><span class="line">        <span class="keyword">if</span> ((flag &amp;&amp; apple.getColor().equals(color)) </span><br><span class="line">            || (!flag &amp;&amp; apple.getWeight() &gt; weight)) &#123;</span><br><span class="line">            result.add(apple);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">List&lt;Apple&gt; greenApples = filterApples(inventory, <span class="string">"green"</span>, <span class="number">0</span>, <span class="keyword">true</span>);</span><br><span class="line">List&lt;Apple&gt; heavyApples = filterApples(inventory, <span class="string">""</span>, <span class="number">150</span>, <span class="keyword">false</span>);</span><br></pre></td></tr></table></figure>
+
+<h2 id="시도-4-동작-파라미터화"><a href="#시도-4-동작-파라미터화" class="headerlink" title="시도 4 : 동작 파라미터화"></a>시도 4 : 동작 파라미터화</h2><p>사과의 어떤 속성에 기초하여 Boolena 값을 반환하는 메서드를 가진 인터페이스를 사용합니다. 이와 같은 동작을 <code>프레디케이트 (Predicate)</code> 라고 합니다.</p>
+<blockquote>
+<p><strong>Predicate</strong> 의 사전적 의미는 “술어” 입니다.<br><strong>술어</strong> 의 사전적 의미는 “논리의 판단. 명제에서 주사에 대하여 긍정 또는 부정의 입언을 하는 개념” 입니다.</p>
+</blockquote>
+<p>아래의 예제에선 <code>전략 디자인 패턴 (Strategy Design Pattern)</code> 을 사용하여 사과를 선택하는 조건을 캡슐화 했습니다.<br>전략 디자인 패턴 (Strategy Design Pattern)은 각 알고리즘을 캡슐화하는 알고리즘 패밀리를 정의해 두고, 런타임에 알고리즘을 선택하는 기법입니다.<br>여기서 “알고리즘 패밀리”는 <code>AppleHeavyWeightPredicate</code> 메서드와 <code>AppleGreenColorPredicate</code> 메서드`가 됩니다.</p>
+<p>만약 농부가 새로운 필터링 조건을 요구하더라도 <code>ApplePredicate 인터페이스</code> 를 구현하는 메서드를 추가하면 됩니다.<br>이와 같이 메서드의 파라미터로 코드 블럭을 전달함으로써 메서드의 동작을 파라미터화 한 것 입니다.</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">ApplePredicate</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">boolean</span> <span class="title">test</span> <span class="params">(Apple apple)</span></span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">AppleHeavyWeightPredicate</span> <span class="keyword">implements</span> <span class="title">ApplePredicate</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">test</span><span class="params">(Apple apple)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> apple.getWeight() &gt; <span class="number">150</span>;</span><br><span class="line">    &#125; </span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">AppleGreenColorPredicate</span> <span class="keyword">implements</span> <span class="title">ApplePredicate</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">test</span><span class="params">(Apple apple)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">"green"</span>.equals(apple.getColor());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 색과 무게를 동시에 필터링 조건으로 갖는 메서드(전략 or 알고리즘 패밀리) 추가</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">AppleRedAndHeavyPredicate</span> <span class="keyword">implements</span> <span class="title">ApplePredicate</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">test</span><span class="params">(Apple apple)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">"red"</span>.equals(apple.getColor()) &amp;&amp; apple.getWeight() &gt; <span class="number">150</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> List&lt;Apple&gt; <span class="title">filterApples</span><span class="params">(List&lt;Apple&gt; inventory, ApplePredicate p)</span> </span>&#123;</span><br><span class="line">    List&lt;Apple&gt; result = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">    <span class="keyword">for</span> (Apple apple : inventory) &#123;</span><br><span class="line">        <span class="keyword">if</span> (p.test(apple)) &#123;</span><br><span class="line">            result.add(apple);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 녹색 사과만 필터링</span></span><br><span class="line">List&lt;Apple&gt; greeApples = filterApples(inventory, <span class="keyword">new</span> AppleGreenColorPredicate());</span><br><span class="line"><span class="comment">// 무게가 150g 이상인 사과만 필터링</span></span><br><span class="line">List&lt;Apple&gt; heavyApples = filterApples(inventory, <span class="keyword">new</span> AppleHeavyWeightPredicate());</span><br></pre></td></tr></table></figure>
+
+<h2 id="시도-5-익명-클래스를-통한-코드-간소화"><a href="#시도-5-익명-클래스를-통한-코드-간소화" class="headerlink" title="시도 5 : 익명 클래스를 통한 코드 간소화"></a>시도 5 : 익명 클래스를 통한 코드 간소화</h2><p>앞선 예제는 동작 파라미터화를 위해 여러 개의 클래스를 정의했습니다.<br><code>익명 클래스 (Anonymous Class)</code> 를 통해 클래스 정의 없이 필터링 구현이 가능합니다.</p>
+<p>그러나 자칫하면 익명 클래스로 인해 코드가 장황해져 유지보수가 어려워 질 수 있습니다.</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 빨간 사과만 필터링</span></span><br><span class="line">List&lt;Apple&gt; redApples = filterApples(inventory, <span class="keyword">new</span> ApplePredicate() &#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">test</span><span class="params">(Apple apple)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">"red"</span>.equals(apple.getColor());</span><br><span class="line">    &#125; </span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<h2 id="시도-6-람다-표현식-사용"><a href="#시도-6-람다-표현식-사용" class="headerlink" title="시도 6 : 람다 표현식 사용"></a>시도 6 : 람다 표현식 사용</h2><p>자바8의 람다 표현식으로 위 예제 코드를 간단하게 구현할 수 있습니다.</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">List&lt;Apple&gt; redApples = filterApples(inventory, (Apple apple) -&gt; <span class="string">"red"</span>.equals(apple.getColor()));</span><br></pre></td></tr></table></figure>
+
+<h2 id="시도-7-리스트-형식으로-추상화"><a href="#시도-7-리스트-형식으로-추상화" class="headerlink" title="시도 7 : 리스트 형식으로 추상화"></a>시도 7 : 리스트 형식으로 추상화</h2><p>사과 이외에도 다양한 물건을 필터링 할 수 있도록 추상화 할 수 있습니다. (Generic 사용)</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Predicate</span>&lt;<span class="title">T</span>&gt; </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">boolean</span> <span class="title">test</span><span class="params">(T t)</span></span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> &lt;T&gt; <span class="function">List&lt;T&gt; <span class="title">filter</span><span class="params">(List&lt;T&gt; list, Predicate&lt;T&gt; p)</span> </span>&#123;</span><br><span class="line">    List&lt;T&gt; result = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">    <span class="keyword">for</span> (T e: list) &#123;</span><br><span class="line">        <span class="keyword">if</span> (p.test(e)) &#123;</span><br><span class="line">            result.add(e);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 빨간 사과 필터링</span></span><br><span class="line">List&lt;Apple&gt; redApples = filter(inventory, (Apple apple) -&gt; <span class="string">"red"</span>.equals(apple.getColor()));</span><br><span class="line"><span class="comment">// 짝수 필터링</span></span><br><span class="line">List&lt;String&gt; evenNumbers = filter(numbers, (Integer i) -&gt; i % <span class="number">2</span> == <span class="number">0</span>);</span><br></pre></td></tr></table></figure>
+
+
+            
+
+        </div>
+    </div>
+    <div id="post-footer" class="post-footer main-content-wrap">
+        
+            <div class="post-footer-tags">
+                <span class="text-color-light text-small">TAGGED IN</span><br>
+                
+    <a class="tag tag--primary tag--small t-link" href="/tags/Java/">Java</a> <a class="tag tag--primary tag--small t-link" href="/tags/Java8/">Java8</a>
+
+            </div>
+        
+        
+            <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2018/12/11/git-secret/" data-tooltip="git-secret" aria-label="PREVIOUS: git-secret">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2018/11/16/Book-Review-자바-ORM-표준-JPA-프로그래밍/" data-tooltip="[Book Review] 자바 ORM 표준 JPA 프로그래밍" aria-label="NEXT: [Book Review] 자바 ORM 표준 JPA 프로그래밍">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="_blank" href="https://www.facebook.com/sharer/sharer.php?u=https://hyunto.github.io/2018/12/03/Java8-Behavior-Parameterization/" title="Share on Facebook" rel="external nofollow noopener noreferrer">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="_blank" href="https://twitter.com/intent/tweet?text=https://hyunto.github.io/2018/12/03/Java8-Behavior-Parameterization/" title="Share on Twitter" rel="external nofollow noopener noreferrer">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="_blank" href="https://plus.google.com/share?url=https://hyunto.github.io/2018/12/03/Java8-Behavior-Parameterization/" title="Share on Google+" rel="external nofollow noopener noreferrer">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#" aria-label="Back to top">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+        
+        
+            
+                <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+            
+        
+    </div>
+</article>
+
+
+
+                <footer id="footer" class="main-content-wrap">
+    <span class="copyrights">
+        Copyrights &copy; 2019 hyunto. All Rights Reserved.
+    </span>
+</footer>
+
+            </div>
+            
+                <div id="bottom-bar" class="post-bottom-bar" data-behavior="2">
+                    
+<script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<script>
+  (adsbygoogle = window.adsbygoogle || []).push({
+    google_ad_client: "ca-pub-8873866934903362",
+    enable_page_level_ads: true
+  });
+</script>
+
+
+                    <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2018/12/11/git-secret/" data-tooltip="git-secret" aria-label="PREVIOUS: git-secret">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2018/11/16/Book-Review-자바-ORM-표준-JPA-프로그래밍/" data-tooltip="[Book Review] 자바 ORM 표준 JPA 프로그래밍" aria-label="NEXT: [Book Review] 자바 ORM 표준 JPA 프로그래밍">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="_blank" href="https://www.facebook.com/sharer/sharer.php?u=https://hyunto.github.io/2018/12/03/Java8-Behavior-Parameterization/" title="Share on Facebook" rel="external nofollow noopener noreferrer">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="_blank" href="https://twitter.com/intent/tweet?text=https://hyunto.github.io/2018/12/03/Java8-Behavior-Parameterization/" title="Share on Twitter" rel="external nofollow noopener noreferrer">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="_blank" href="https://plus.google.com/share?url=https://hyunto.github.io/2018/12/03/Java8-Behavior-Parameterization/" title="Share on Google+" rel="external nofollow noopener noreferrer">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#" aria-label="Back to top">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+                </div>
+                <div id="share-options-bar" class="share-options-bar" data-behavior="2">
+    <i id="btn-close-shareoptions" class="fa fa-close"></i>
+    <ul class="share-options">
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="_blank" href="https://www.facebook.com/sharer/sharer.php?u=https://hyunto.github.io/2018/12/03/Java8-Behavior-Parameterization/" rel="external nofollow noopener noreferrer">
+                    <i class="fab fa-facebook" aria-hidden="true"></i><span>Share on Facebook</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="_blank" href="https://twitter.com/intent/tweet?text=https://hyunto.github.io/2018/12/03/Java8-Behavior-Parameterization/" rel="external nofollow noopener noreferrer">
+                    <i class="fab fa-twitter" aria-hidden="true"></i><span>Share on Twitter</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="_blank" href="https://plus.google.com/share?url=https://hyunto.github.io/2018/12/03/Java8-Behavior-Parameterization/" rel="external nofollow noopener noreferrer">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i><span>Share on Google+</span>
+                </a>
+            </li>
+        
+    </ul>
+</div>
+
+            
+        </div>
+        
+
+
+    
+        
+    
+
+<div id="about">
+    <div id="about-card">
+        <div id="about-btn-close">
+            <i class="fa fa-times"></i>
+        </div>
+        
+            <img id="about-card-picture" src="/assets/images/author.jpg" alt="Author&#39;s picture">
+        
+            <h4 id="about-card-name">hyunto</h4>
+        
+            <div id="about-card-bio"><p>호학심사(好學深思)<br>즐거이 배우고 깊이 생각하라</p>
+</div>
+        
+        
+            <div id="about-card-job">
+                <i class="fa fa-briefcase"></i>
+                <br>
+                <p>Software Engineer</p>
+
+            </div>
+        
+        
+            <div id="about-card-location">
+                <i class="fa fa-map-marker"></i>
+                <br>
+                Republic of Korea, Seoul
+            </div>
+        
+    </div>
+</div>
+
+        
+            <div id="algolia-search-modal" class="modal-container">
+    <div class="modal">
+        <div class="modal-header">
+            <span class="close-button"><i class="fa fa-close"></i></span>
+            <a href="https://algolia.com" target="_blank" rel="external nofollow noopener noreferrer" class="searchby-algolia text-color-light link-unstyled">
+                <span class="searchby-algolia-text text-color-light text-small">by</span>
+                <img class="searchby-algolia-logo" src="https://www.algolia.com/static_assets/images/press/downloads/algolia-light.svg">
+            </a>
+            <i class="search-icon fa fa-search"></i>
+            <form id="algolia-search-form">
+                <input type="text" id="algolia-search-input" name="search" class="form-control input--large search-input" placeholder="Search ">
+            </form>
+        </div>
+        <div class="modal-body">
+            <div class="no-result text-color-light text-center">no post found</div>
+            <div class="results">
+                
+                <div class="media">
+                    
+                    <div class="media-body">
+                        <a class="link-unstyled" href="https://hyunto.github.io/2018/07/26/Hexo-사용법/">
+                            <h3 class="media-heading">Hexo 사용법</h3>
+                        </a>
+                        <span class="media-meta">
+                            <span class="media-date text-small">
+                                
+                                    Jul 26, 2018
+                                
+                            </span>
+                        </span>
+                        <div class="media-content hide-xs font-merryweather"><p>2018년 초, Hexo를 사용해 이 블로그를 만들었으나 집, 회사 PC에서 블로그 Source를 다운받아 Deploy하는 과정에서 여러번 블로그를 망가뜨려 버렸습니다.<br>같은 실수를 반복하지 않기 위해 블로그 소스코드 다운, 빌드, 배포와 글을 작성하는 방법을 간단히 정리합니다.</p></div>
+                    </div>
+                    <div style="clear:both;"></div>
+                    <hr>
+                </div>
+                
+                <div class="media">
+                    
+                    <div class="media-body">
+                        <a class="link-unstyled" href="https://hyunto.github.io/2018/07/27/자주-사용하는-Docker-명령어-정리/">
+                            <h3 class="media-heading">자주 사용하는 Docker 명령어 정리</h3>
+                        </a>
+                        <span class="media-meta">
+                            <span class="media-date text-small">
+                                
+                                    Jul 27, 2018
+                                
+                            </span>
+                        </span>
+                        <div class="media-content hide-xs font-merryweather"><p>업무 중 자주 사용되는 Docker CLI명령어와 Dockerfile 키워드를 정리합니다.<br>또한 업무중 겪었던 Docker 관련 이슈를 정리합니다.</p></div>
+                    </div>
+                    <div style="clear:both;"></div>
+                    <hr>
+                </div>
+                
+                <div class="media">
+                    
+                    <div class="media-left">
+                        <a class="link-unstyled" href="https://hyunto.github.io/2018/11/16/Book-Review-자바-ORM-표준-JPA-프로그래밍/">
+                            <img class="media-image" src="https://hyunto.github.io/2018/11/16/Book-Review-자바-ORM-표준-JPA-프로그래밍/book_cover.png" width="90" height="90">
+                        </a>
+                    </div>
+                    
+                    <div class="media-body">
+                        <a class="link-unstyled" href="https://hyunto.github.io/2018/11/16/Book-Review-자바-ORM-표준-JPA-프로그래밍/">
+                            <h3 class="media-heading">[Book Review] 자바 ORM 표준 JPA 프로그래밍</h3>
+                        </a>
+                        <span class="media-meta">
+                            <span class="media-date text-small">
+                                
+                                    Nov 16, 2018
+                                
+                            </span>
+                        </span>
+                        <div class="media-content hide-xs font-merryweather"><p>자바 ORM 표준 JPA 프로그래밍 (2015) 독서/스터디 후기</p></div>
+                    </div>
+                    <div style="clear:both;"></div>
+                    <hr>
+                </div>
+                
+                <div class="media">
+                    
+                    <div class="media-body">
+                        <a class="link-unstyled" href="https://hyunto.github.io/2018/12/03/Java8-Behavior-Parameterization/">
+                            <h3 class="media-heading">동작 파라미터화 (Behavior Parameterization)</h3>
+                        </a>
+                        <span class="media-meta">
+                            <span class="media-date text-small">
+                                
+                                    Dec 3, 2018
+                                
+                            </span>
+                        </span>
+                        <div class="media-content hide-xs font-merryweather"><p><code>동작 파라미터화 (Behavior Parameterization)</code> 는 “다양한 동작을 수행할 수 있는 코드 블럭을 메서드 파라미터로 전달”함으로써 자주 변경되는 요구사항에 효과적으로 대응할 수 있는 방식을 의미합니다.</p>
+<p>여기서는 자주 변경되는 요구사항의 예시를 기반으로 동작 파라미터화를 한 후 Java8에서 추가된 Lambda로 코드를 간소화하는 과정을 보여줍니다.</p></div>
+                    </div>
+                    <div style="clear:both;"></div>
+                    <hr>
+                </div>
+                
+                <div class="media">
+                    
+                    <div class="media-body">
+                        <a class="link-unstyled" href="https://hyunto.github.io/2018/12/11/git-secret/">
+                            <h3 class="media-heading">git-secret</h3>
+                        </a>
+                        <span class="media-meta">
+                            <span class="media-date text-small">
+                                
+                                    Dec 11, 2018
+                                
+                            </span>
+                        </span>
+                        <div class="media-content hide-xs font-merryweather"><p>비밀번호, Secret Key 값과 같이 보호되야 하는 데이터가 포함된 파일을 그냥 Git Commit &amp; Push 하면 개인적인 데이터가 노출되는 문제점이 발생합니다.</p>
+<p><code>git-secret</code> 을 사용하면 개인적인 데이터가 포함된 파일을 암호화 한 후에 Git 저장소에 저장함으로써 문제점을 해결할 수 있습니다.</p></div>
+                    </div>
+                    <div style="clear:both;"></div>
+                    <hr>
+                </div>
+                
+                <div class="media">
+                    
+                    <div class="media-body">
+                        <a class="link-unstyled" href="https://hyunto.github.io/2019/01/15/introduction-to-oauth2.0/">
+                            <h3 class="media-heading">OAuth 2.0 - 기본개념 및 Authorization Grant</h3>
+                        </a>
+                        <span class="media-meta">
+                            <span class="media-date text-small">
+                                
+                                    Jan 15, 2019
+                                
+                            </span>
+                        </span>
+                        <div class="media-content hide-xs font-merryweather"><p>최근 OAuth 2.0에 대해 공부하면서 다양한 Grant 종류가 존재함을 알게 되었습니다.<br>기본 개념과 Grant 종류에 대해 잘 정리되어 OAuth 2.0 이해에 도움됬던 사이트들의 내용을 정리합니다.</p></div>
+                    </div>
+                    <div style="clear:both;"></div>
+                    <hr>
+                </div>
+                
+                <div class="media">
+                    
+                    <div class="media-body">
+                        <a class="link-unstyled" href="https://hyunto.github.io/2019/02/11/java8-lambda/">
+                            <h3 class="media-heading">람다 표현식 (Lambda Expression)</h3>
+                        </a>
+                        <span class="media-meta">
+                            <span class="media-date text-small">
+                                
+                                    Feb 11, 2019
+                                
+                            </span>
+                        </span>
+                        <div class="media-content hide-xs font-merryweather"><p>Java8에서 새롭게 추가된 람다 표현식을 정리합니다.</p></div>
+                    </div>
+                    <div style="clear:both;"></div>
+                    <hr>
+                </div>
+                
+                <div class="media">
+                    
+                    <div class="media-body">
+                        <a class="link-unstyled" href="https://hyunto.github.io/2019/02/12/java8-stream-basic/">
+                            <h3 class="media-heading">스트림(Stream) 소개</h3>
+                        </a>
+                        <span class="media-meta">
+                            <span class="media-date text-small">
+                                
+                                    Feb 12, 2019
+                                
+                            </span>
+                        </span>
+                        <div class="media-content hide-xs font-merryweather"><p>Java8에서 새로 추가된 스트림의 기초를 정리합니다.</p></div>
+                    </div>
+                    <div style="clear:both;"></div>
+                    <hr>
+                </div>
+                
+                <div class="media">
+                    
+                    <div class="media-body">
+                        <a class="link-unstyled" href="https://hyunto.github.io/2019/02/17/java8-stream-practice/">
+                            <h3 class="media-heading">스트림(Stream) 활용</h3>
+                        </a>
+                        <span class="media-meta">
+                            <span class="media-date text-small">
+                                
+                                    Feb 17, 2019
+                                
+                            </span>
+                        </span>
+                        <div class="media-content hide-xs font-merryweather"><p>Java8 Stream 활용 방안을 정리합니다.</p></div>
+                    </div>
+                    <div style="clear:both;"></div>
+                    <hr>
+                </div>
+                
+                <div class="media">
+                    
+                    <div class="media-body">
+                        <a class="link-unstyled" href="https://hyunto.github.io/2019/03/13/springframework-testing-private-method/">
+                            <h3 class="media-heading">Private 메소드 테스트하기</h3>
+                        </a>
+                        <span class="media-meta">
+                            <span class="media-date text-small">
+                                
+                                    Mar 13, 2019
+                                
+                            </span>
+                        </span>
+                        <div class="media-content hide-xs font-merryweather"><p>단위 테스트 작성시 Private 접근자를 가진 메소드를 테스트하는 방법을 정리합니다.</p></div>
+                    </div>
+                    <div style="clear:both;"></div>
+                    <hr>
+                </div>
+                
+            </div>
+        </div>
+        <div class="modal-footer">
+            <p class="results-count text-medium" data-message-zero="no post found" data-message-one="1 post found" data-message-other="{n} posts found">
+                10 posts found
+            </p>
+        </div>
+    </div>
+</div>
+
+        
+        
+<div id="cover" style="background-image:url('/assets/images/cover_the_legend_of_zelda.jpg');"></div>
+        <!--SCRIPTS-->
+<script src="/assets/js/script-x2vft4khydnm3fle5k6i00lpg0w2a1yxes6bmk6mdnvmeqzmtipaw6lhf8rx.min.js"></script>
+<!--SCRIPTS END-->
+
+    
+        <script>
+             var disqus_config = function () {
+                 this.page.url = 'https://hyunto.github.io/2018/12/03/Java8-Behavior-Parameterization/';
+                 
+                    this.page.identifier = '2018/12/03/Java8-Behavior-Parameterization/';
+                 
+             };
+            (function() {
+                var d = document, s = d.createElement('script');
+                var disqus_shortname = 'hyunto';
+                s.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+
+                s.setAttribute('data-timestamp', +new Date());
+                (d.head || d.body).appendChild(s);
+            })();
+        </script>
+    
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.14.1/moment-with-locales.min.js"></script>
+    <script src="//cdn.jsdelivr.net/algoliasearch/3/algoliasearch.min.js"></script>
+    <script>
+        var algoliaClient = algoliasearch('XKYZJU6GUU', '6f712de882b0c14f1ba276f5970d1d44');
+        var algoliaIndex = algoliaClient.initIndex('hyunto.github.io');
+    </script>
+
+
+    </body>
+</html>

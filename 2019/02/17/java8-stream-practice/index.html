@@ -1,0 +1,978 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="즐거이 배우고 깊이 생각하라">
+    <title>스트림(Stream) 활용 - 즐거이 배우고 깊이 생각하라</title>
+    <meta name="author" content="hyunto">
+    
+    
+        <link rel="icon" href="https://hyunto.github.io/assets/images/favicon.ico">
+    
+    
+        <link rel="alternate" type="application/atom+xml" title="RSS" href="/atom.xml">
+    
+    <script type="application/ld+json">{"@context":"http://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"hyunto","sameAs":["https://github.com/hyunto","https://blog.naver.com/eqelizer","mailto:jhyunto@gmail.com"],"image":"author.jpg"},"articleBody":"Java8 Stream 활용 방안을 정리합니다.\n\n\n\n\n스트림을 활용하면 외부 반복 을 내부 반복 으로 바꿀 수 있어 좀 더 직관적인 코드를 작성할 수 있습니다. 또한 병렬로 수행할지 여부를 결정할 수 있습니다.\n본문에서는 스트림 API를 활용하는 방법을 정리합니다.\n필터링과 슬라이싱\nfilter()\ndistinct()\nlimit()\nskip()\n\n12345678910111213141516171819202122232425262728// ** 프레디케이트로 필터링 **// 스트림 인터페이스의 filter 메서드는 Predicate를 인수로 받고,// 일치하는 모든 요소를 반환한다.List&lt;Dish&gt; vegetarianMenu = menu.stream()                                .filter(Dish::isVegetarian)                                .collect(toList());// ** 고유 요소 필터링 **// distinct 메서드로 중복을 제거한다.List&lt;Integer&gt; numbers = Arrays.asList(1, 2, 1, 3, 3, 2, 4);numbers.stream()       .filter(i -&gt; i % 2 == 0)       .distinct()       .forEach(System.out::println);    // 2, 4 출력// ** 스트림 축소 **// (정렬 여부와 상관없이)지정된 개수 이하의 크기만 반환하는 limit(n) 메서드List&lt;Dish&gt; dishes = menu.stream()                        .filter(d -&gt; d.getCalories() &gt; 300)                        .limit(3)                        .collect(toList());// ** 요소 건너뛰기 **// 처음 n개 요소를 제외한 스트림을 반환하는 skip(n) 메서드List&lt;Dish&gt; dishes = menu.stream()                        .filter(d -&gt; d.getCalories() &gt; 300)                        .skip(2)                        .collect(toList());\n\n매핑\nmap()\nflatMap() : 각 배열을 스트림이 아니라 스트림의 컨텐츠로 매핑한다.\n\n123456789101112131415161718192021222324// ** 스트림의 각 요소에 함수 적용하기 **// 예제 1&gt; 메뉴의 이름으로 변환(매핑)List&lt;String&gt; dishNames = menu.stream()                             .map(Dish::getName)                             .collect(toList());// 예제 2&gt; 단어의 길이로 변환(매핑)List&lt;String&gt; words = Arrays.asList(\"Java8\", \"Lambdas\", \"In\", \"Action\");List&lt;Integer&gt; wordLengths = words.stream()                                 .map(String::length)                                 .collect(toList());// 예제 3&gt; 메뉴 이름의 글자수로 변환(매핑)List&lt;Integer&gt; dishNameLengths = menu.stream()                                    .map(Dish::getName)                                    .map(String::length)                                    .collect(toList());// ** 스트림 평면화 **// [\"Hello\", \"World\"] --&gt; [\"H\", \"e\", \"l\", \"o\", \"W\", \"r\", \"d\"] 로 변환 예제List&lt;String&gt; words = Arrays.asList(\"Hello\", \"World\");List&lt;String&gt; flattedDistinctedWord = words.stream()                                          .map(word -&gt; word.split(\"\"))                                          .flatMap(Arrays::stream)                                          .distinct()                                          .collect(Copllectors.toList());\n\n검색과 매칭\nallMatch()\nanyMatch()\nnoneMatch()\nfindFirst()\nfindAny() : 현재 스트림에서 임의의 요소를 반환. 병렬 스트림에서는 첫 번째 요소를 찾기 어렵기 때문에 제약이 적은 findAny를 사용한다.\n\nallMatch(), anyMatch(), noneMatch() 메서드는 자바의 &amp;&amp;, || 연산 처럼 활용된다.\n1234567891011121314151617181920212223242526// ** Predicate가 적어도 한 요소와 일치하는지 확인 **// 메뉴 중 채식주의자 용 메뉴가 하나라도 존재하면 메세지 출력if (menu.stream().anyMatch(Dish::isVegetarian)) &#123;    System.out.println(\"The menu is (somewhat) vegetarian friendly!!\");&#125;// ** Predicate가 모든 요소와 일치하는지 검사 **// 모든 메뉴가 1000 칼로리 미만인지 확인boolean isHealthy = menu.stream()                        .allMatch(d -&gt; d.getCalories() &lt; 1000);boolean isHealthy = menu.stream()                        .noneMatch(d -&gt; d.getCalories() &gt;= 1000);// ** 임의의 요소 검색 **// 채식 요리 선택Optional&lt;Dish&gt; dish = menu.stream()                          .filter(Dish::isVegetarian)                          .findAny()                          .ifPresent(d -&gt; System.out.println(d.getName()));// ** 첫 번째 요소 검색 **List&lt;Integer&gt; someNumbers = Arrays.asList(1, 2, 3, 4, 5);Optional&lt;Integer&gt; firstSquareDivisibleByThree = someNumbers.stream()                                                           .map(n -&gt; n * n)                                                           .filter(n -&gt; n % 3 == 0)                                                           .findFirst();    // 9\n\n리듀싱\nreduce()\n\nreduce 메서드는 병렬 처리가 가능하다는 장점이 있다.\n1234567891011121314// ** 요소의 합 **// beforeint sum = 0;for (int x : numbers) &#123;    sum += x;&#125;// afterint sum = numbers.steam().reduce(0, (a, b) -&gt; a + b);int sum = numbers.steam().reduce(0, Integer:sum);    // 메서드 레퍼런스 사용Optional&lt;Integer&gt; sum = numbers.stream().reduce((a, b) -&gt; (a + b));    // 초기값을 받지 않는 방법 (Optional 객체로 반환)// ** 최대값과 최소값 **Optional&lt;Integer&gt; max = numbers.stream().reduce(Integer::max);Optional&lt;Integer&gt; min = numbers.stream().reduce(Integer::min);\n\n\n\n\n연산\n형식\n반환 형식\n사용된 함수형 인터페이스 형식\n함수 디스크립터\n\n\n\nfilter\n중간 연산\nStream\nPredicate\nT -&gt; boolean\n\n\ndistinct\n중간 연산(상태 있는 언바운드)\nStream\n\n\n\n\nskip\n중간 연산(상태 있는 언바운드)\nStream\nLong\n\n\n\nlimit\n중간 연산(상태 있는 언바운드)\nStream\nLong\n\n\n\nmap\n중간 연산\nStream\nFunction&lt;T, R&gt;\nT -&gt; R\n\n\nflatMap\n중간 연산\nStream\nFunction&lt;T, Stream&gt;\nT -&gt; Stream\n\n\nsorted\n중간 연산(상태 있는 언바운드)\nStream\nComparator\n(T, T) -&gt; int\n\n\nanyMatch\n최종 연산\nboolean\nPredicate\nT -&gt; boolean\n\n\nnoneMatch\n최종 연산\nboolean\nPredicate\nT -&gt; boolean\n\n\nallMatch\n최종 연산\nboolean\nPredicate\nT -&gt; boolean\n\n\nfindAny\n최종 연산\nOptional\n\n\n\n\nfindFirst\n최종 연산\nOptional\n\n\n\n\nforEach\n최종 연산\nvoid\nConsumer\nT -&gt; void\n\n\nCollect\n최종 연산\nR\nCollector&lt;T, A, R&gt;\n\n\n\nReduce\n최종 연산(상태 있는 언바운드)\nOptional\nBinaryOperator\n(T, T) -&gt; T\n\n\ncount\n최종 연산\nlong\n\n\n\n\n숫자형 스트림기본형 특화 스트림Java8에는 박싱 비용을 줄이고 sum, max와 같이 자주 사용되는 숫자 관련 리듀싱 연산 메서드를 함께 제공하는 세 가지 기본형 특화 스트림을 제공한다.\n\nIntStream\nDoubleStream\nLongStream\nOptionalInt\nOptionalDouble\nOptionalLong\n\n1234567891011121314151617// ** 숫자 스트림으로 매핑 **// mapToInt 메서드는 IntStream 인터페이스로 반환하며, // 기본적으로 sum, min, average 등 다양한 유틸리티 메서드를 제공한다.int calories = menu.stream()                   .mapToInt(Dish::getCalories)                   .sum();// **객체 스트림으로 복원 **// boxed() 메서드를 사용하여 특화 스트림을 일반 스트림으로 변환할 수 있다.IntStream intStream = menu.stream().mapToInt(Dish::getCalories);Stream&lt;Integer&gt; stream = intStream.boxed();// Optional 컨테이너 클래스OptionalInt maxCalories = menu.stream()                              .mapToInt(Dish::getCalories)                              .max();int max = maxCalories.orElse(1);    // 값이 없을 때 기본 최대값을 명시적으로 설정\n\n숫자 범위IntStream과 LongStream은 특정 범위의 숫자를 이용하기 위한 2가지 정적 메서드를 제공한다. :\n\nrange(시작값, 종료값) : 결과에 시작값, 종료값 미포함\nrangeClosed(시작값, 종료값) : 결과에 시작값, 종료값 포함\n\n123IntStream evenNumbers = IntStream.rangeClosed(1, 100)    // 1~100                                 .filter(n -&gt; n % 2 == 0);    // 짝수 필터링System.out.println(evenNumbers.count());    // 50개\n\n스트림 만들기값으로 스트림 만들기\nStream.of() : 임의의 수로 인수를 받아 스트림으로 만든다.\nStream.empty() : 스트림을 비운다.\n\n1234Stream&lt;String&gt; stream = Stream.of(\"Java 8\", \"Lambdas\", \"In\", \"Action\");stream.map(String.toUpperCase).forEach(System.out::println);Stream&lt;String&gt; emptyStream = Stream.empty();\n\n배열로 스트림 만들기\nArrays.stream()\n\n12int[] numbers = &#123;2, 3, 5, 7, 11, 13&#125;;int sum = Arrays.stream(numbers).sum();    // 합계 41\n\n파일로 스트림 만들기NIO API(비블록 I/O)도 스트림 API를 활용할 수 있게 되었다.java.nio.file.Files의 많은 정적 메서드가 스트림을 반환한다. (ex&gt; Files.lines)\n12345678910// 파일에서 고유한 단어 수를 찾는 프로그램// Files.lines 메서드는 주어진 파일의 행 스트림을 문자열로 반환한다.long uniqueWords = 0;try (Stream&lt;String&gt; lines = Files.lines(Paths.get(\"data.txt\"), Charset.defaultCharset())) &#123;    uniqueWords = lines.flatMap(line -&gt; Arrays.stream(line.split(\" \")))                       .distinct()                       .count();&#125; catch (IOException e) &#123;    &#125;\n\n함수로 무한 스트림 만들기스트림 API는 함수에서 스트림을 만들 수 있는 두 개의 정적 메서드를 제공한다.이전에 봤던 크기가 고정된 컬렉션과는 달리 크기가 고정되지 않은 무한 스트림(Infinite Stream) 을 만들 수 있다. (언바운드 스트림(Unbounded Stream))따라서 반드시 limit(n) 함수와 함께 사용해야 한다.\n\nStream.iterate()\n초기값과 람다를 인수로 받아서 새로운 값을 끊임없이 생산한다.\n일반적으로 연속된 일련의 값을 만들 때 사용한다.\n\n\nStream.generate()\nSupplier를 인수로 받아서 새로운 값을 생산한다.\n\n\n\n123456789// iterateStream.iterate(0, n -&gt; n + 2)      .limit(10)      .forEach(System.out::println);    // 0, 2, 4, 6, 8, 10, 12, 14, 16, 18 출력// generateStream.generate(Math::random)      .limit(5)      .forEach(System.out::println);\n\n","dateCreated":"2019-02-17T00:24:07+09:00","dateModified":"2019-08-08T23:23:01+09:00","datePublished":"2019-02-17T00:24:07+09:00","description":"Java8 Stream 활용 방안을 정리합니다.","headline":"스트림(Stream) 활용","image":[],"mainEntityOfPage":{"@type":"WebPage","@id":"https://hyunto.github.io/2019/02/17/java8-stream-practice/"},"publisher":{"@type":"Organization","name":"hyunto","sameAs":["https://github.com/hyunto","https://blog.naver.com/eqelizer","mailto:jhyunto@gmail.com"],"image":"author.jpg","logo":{"@type":"ImageObject","url":"author.jpg"}},"url":"https://hyunto.github.io/2019/02/17/java8-stream-practice/","keywords":"Java, Java8, Stream"}</script>
+    <meta name="description" content="Java8 Stream 활용 방안을 정리합니다.">
+<meta name="keywords" content="Java,Java8,Stream">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="스트림(Stream) 활용">
+<meta property="og:url" content="https://hyunto.github.io/2019/02/17/java8-stream-practice/index.html">
+<meta property="og:site_name" content="즐거이 배우고 깊이 생각하라">
+<meta property="og:description" content="Java8 Stream 활용 방안을 정리합니다.">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2019-08-08T14:23:01.952Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="스트림(Stream) 활용">
+<meta name="twitter:description" content="Java8 Stream 활용 방안을 정리합니다.">
+    
+    
+        
+    
+    
+        <meta property="og:image" content="https://hyunto.github.io/assets/images/author.jpg">
+    
+    
+    
+    
+    <!--STYLES-->
+    <link rel="stylesheet" href="/assets/css/style-2dwn68oxrx7garnr65iriskewle1uhxjgd7vwi5ghcmktc2mzvq8clkrcp9l.min.css">
+    <!--STYLES END-->
+    
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+        ga('create', 'UA-113695151-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+
+    
+</head>
+
+    <body>
+        <div id="blog">
+            <!-- Define author's picture -->
+
+
+<header id="header" data-behavior="2">
+    <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+    <div class="header-title">
+        <a class="header-title-link" href="/ ">즐거이 배우고 깊이 생각하라</a>
+    </div>
+    
+        
+            <a class="header-right-icon open-algoria-search" href="#about">
+        
+        
+            <i class="fa fa-lg fa-search"></i>
+        
+        </a>
+    
+</header>
+
+            <!-- Define author's picture -->
+
+
+
+        
+    
+
+<nav id="sidebar" data-behavior="2">
+    <div class="sidebar-container">
+        
+            <div class="sidebar-profile">
+                <a href="/#about">
+                    <img class="sidebar-profile-picture" src="/assets/images/author.jpg" alt="Author&#39;s picture">
+                </a>
+                <h4 class="sidebar-profile-name">hyunto</h4>
+                
+                    <h5 class="sidebar-profile-bio"><p>호학심사(好學深思)<br>즐거이 배우고 깊이 생각하라</p>
+</h5>
+                
+            </div>
+        
+        
+            <ul class="sidebar-buttons">
+            
+                <li class="sidebar-button">
+                    
+                        <a class="sidebar-button-link " href="/ " title="Home">
+                    
+                        <i class="sidebar-button-icon fa fa-home" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Home</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a class="sidebar-button-link " href="/all-categories" title="Categories">
+                    
+                        <i class="sidebar-button-icon fa fa-bookmark" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Categories</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a class="sidebar-button-link " href="/all-tags" title="Tags">
+                    
+                        <i class="sidebar-button-icon fa fa-tags" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Tags</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a class="sidebar-button-link " href="/all-archives" title="Archives">
+                    
+                        <i class="sidebar-button-icon fa fa-archive" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Archives</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a class="sidebar-button-link open-algolia-search" href="#search" title="Search">
+                    
+                        <i class="sidebar-button-icon fa fa-search" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Search</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a class="sidebar-button-link " href="#about" title="About">
+                    
+                        <i class="sidebar-button-icon fa fa-question" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">About</span>
+                    </a>
+            </li>
+            
+        </ul>
+        
+            <ul class="sidebar-buttons">
+            
+                <li class="sidebar-button">
+                    
+                        <a class="sidebar-button-link " href="https://github.com/hyunto" target="_blank" rel="external nofollow noopener noreferrer" title="GitHub">
+                    
+                        <i class="sidebar-button-icon fab fa-github" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">GitHub</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a class="sidebar-button-link " href="https://blog.naver.com/eqelizer" target="_blank" rel="external nofollow noopener noreferrer" title="Previous Blog">
+                    
+                        <i class="sidebar-button-icon fas fa-paper-plane" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Previous Blog</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a class="sidebar-button-link " href="mailto:jhyunto@gmail.com" target="_blank" rel="external nofollow noopener noreferrer" title="Mail">
+                    
+                        <i class="sidebar-button-icon fa fa-envelope" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Mail</span>
+                    </a>
+            </li>
+            
+        </ul>
+        
+            <ul class="sidebar-buttons">
+            
+                <li class="sidebar-button">
+                    
+                        <a class="sidebar-button-link " href="/atom.xml" title="RSS">
+                    
+                        <i class="sidebar-button-icon fa fa-rss" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">RSS</span>
+                    </a>
+            </li>
+            
+        </ul>
+        
+    </div>
+</nav>
+
+            
+            <div id="main" data-behavior="2" class="
+                        hasCoverMetaIn
+                        ">
+                
+<article class="post">
+    
+    
+        <div class="post-header main-content-wrap text-left">
+    
+        <h1 class="post-title">
+            스트림(Stream) 활용
+        </h1>
+    
+    
+        <div class="post-meta">
+    <time datetime="2019-02-17T00:24:07+09:00">
+	
+		    Feb 17, 2019
+    	
+    </time>
+    
+        <span>in </span>
+        
+    <a class="category-link" href="/categories/Programming/">Programming</a>
+
+
+    
+</div>
+
+    
+</div>
+
+    
+    <div class="post-content markdown">
+        <div class="main-content-wrap">
+            <p>Java8 Stream 활용 방안을 정리합니다.</p>
+<a id="more"></a>
+
+<h1 id="table-of-contents">Table of Contents</h1><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#필터링과-슬라이싱"><span class="toc-text">필터링과 슬라이싱</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#매핑"><span class="toc-text">매핑</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#검색과-매칭"><span class="toc-text">검색과 매칭</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#리듀싱"><span class="toc-text">리듀싱</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#숫자형-스트림"><span class="toc-text">숫자형 스트림</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#기본형-특화-스트림"><span class="toc-text">기본형 특화 스트림</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#숫자-범위"><span class="toc-text">숫자 범위</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#스트림-만들기"><span class="toc-text">스트림 만들기</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#값으로-스트림-만들기"><span class="toc-text">값으로 스트림 만들기</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#배열로-스트림-만들기"><span class="toc-text">배열로 스트림 만들기</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#파일로-스트림-만들기"><span class="toc-text">파일로 스트림 만들기</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#함수로-무한-스트림-만들기"><span class="toc-text">함수로 무한 스트림 만들기</span></a></li></ol></li></ol>
+
+<p>스트림을 활용하면 <strong>외부 반복</strong> 을 <strong>내부 반복</strong> 으로 바꿀 수 있어 좀 더 직관적인 코드를 작성할 수 있습니다. 또한 병렬로 수행할지 여부를 결정할 수 있습니다.</p>
+<p>본문에서는 스트림 API를 활용하는 방법을 정리합니다.</p>
+<h1 id="필터링과-슬라이싱"><a href="#필터링과-슬라이싱" class="headerlink" title="필터링과 슬라이싱"></a>필터링과 슬라이싱</h1><ul>
+<li>filter()</li>
+<li>distinct()</li>
+<li>limit()</li>
+<li>skip()</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ** 프레디케이트로 필터링 **</span></span><br><span class="line"><span class="comment">// 스트림 인터페이스의 filter 메서드는 Predicate를 인수로 받고,</span></span><br><span class="line"><span class="comment">// 일치하는 모든 요소를 반환한다.</span></span><br><span class="line">List&lt;Dish&gt; vegetarianMenu = menu.stream()</span><br><span class="line">                                .filter(Dish::isVegetarian)</span><br><span class="line">                                .collect(toList());</span><br><span class="line"></span><br><span class="line"><span class="comment">// ** 고유 요소 필터링 **</span></span><br><span class="line"><span class="comment">// distinct 메서드로 중복을 제거한다.</span></span><br><span class="line">List&lt;Integer&gt; numbers = Arrays.asList(<span class="number">1</span>, <span class="number">2</span>, <span class="number">1</span>, <span class="number">3</span>, <span class="number">3</span>, <span class="number">2</span>, <span class="number">4</span>);</span><br><span class="line">numbers.stream()</span><br><span class="line">       .filter(i -&gt; i % <span class="number">2</span> == <span class="number">0</span>)</span><br><span class="line">       .distinct()</span><br><span class="line">       .forEach(System.out::println);    <span class="comment">// 2, 4 출력</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// ** 스트림 축소 **</span></span><br><span class="line"><span class="comment">// (정렬 여부와 상관없이)지정된 개수 이하의 크기만 반환하는 limit(n) 메서드</span></span><br><span class="line">List&lt;Dish&gt; dishes = menu.stream()</span><br><span class="line">                        .filter(d -&gt; d.getCalories() &gt; <span class="number">300</span>)</span><br><span class="line">                        .limit(<span class="number">3</span>)</span><br><span class="line">                        .collect(toList());</span><br><span class="line"></span><br><span class="line"><span class="comment">// ** 요소 건너뛰기 **</span></span><br><span class="line"><span class="comment">// 처음 n개 요소를 제외한 스트림을 반환하는 skip(n) 메서드</span></span><br><span class="line">List&lt;Dish&gt; dishes = menu.stream()</span><br><span class="line">                        .filter(d -&gt; d.getCalories() &gt; <span class="number">300</span>)</span><br><span class="line">                        .skip(<span class="number">2</span>)</span><br><span class="line">                        .collect(toList());</span><br></pre></td></tr></table></figure>
+
+<h1 id="매핑"><a href="#매핑" class="headerlink" title="매핑"></a>매핑</h1><ul>
+<li>map()</li>
+<li>flatMap() : 각 배열을 스트림이 아니라 스트림의 컨텐츠로 매핑한다.</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ** 스트림의 각 요소에 함수 적용하기 **</span></span><br><span class="line"><span class="comment">// 예제 1&gt; 메뉴의 이름으로 변환(매핑)</span></span><br><span class="line">List&lt;String&gt; dishNames = menu.stream()</span><br><span class="line">                             .map(Dish::getName)</span><br><span class="line">                             .collect(toList());</span><br><span class="line"><span class="comment">// 예제 2&gt; 단어의 길이로 변환(매핑)</span></span><br><span class="line">List&lt;String&gt; words = Arrays.asList(<span class="string">"Java8"</span>, <span class="string">"Lambdas"</span>, <span class="string">"In"</span>, <span class="string">"Action"</span>);</span><br><span class="line">List&lt;Integer&gt; wordLengths = words.stream()</span><br><span class="line">                                 .map(String::length)</span><br><span class="line">                                 .collect(toList());</span><br><span class="line"><span class="comment">// 예제 3&gt; 메뉴 이름의 글자수로 변환(매핑)</span></span><br><span class="line">List&lt;Integer&gt; dishNameLengths = menu.stream()</span><br><span class="line">                                    .map(Dish::getName)</span><br><span class="line">                                    .map(String::length)</span><br><span class="line">                                    .collect(toList());</span><br><span class="line"></span><br><span class="line"><span class="comment">// ** 스트림 평면화 **</span></span><br><span class="line"><span class="comment">// ["Hello", "World"] --&gt; ["H", "e", "l", "o", "W", "r", "d"] 로 변환 예제</span></span><br><span class="line">List&lt;String&gt; words = Arrays.asList(<span class="string">"Hello"</span>, <span class="string">"World"</span>);</span><br><span class="line">List&lt;String&gt; flattedDistinctedWord = words.stream()</span><br><span class="line">                                          .map(word -&gt; word.split(<span class="string">""</span>))</span><br><span class="line">                                          .flatMap(Arrays::stream)</span><br><span class="line">                                          .distinct()</span><br><span class="line">                                          .collect(Copllectors.toList());</span><br></pre></td></tr></table></figure>
+
+<h1 id="검색과-매칭"><a href="#검색과-매칭" class="headerlink" title="검색과 매칭"></a>검색과 매칭</h1><ul>
+<li>allMatch()</li>
+<li>anyMatch()</li>
+<li>noneMatch()</li>
+<li>findFirst()</li>
+<li>findAny() : 현재 스트림에서 임의의 요소를 반환. 병렬 스트림에서는 첫 번째 요소를 찾기 어렵기 때문에 제약이 적은 findAny를 사용한다.</li>
+</ul>
+<p>allMatch(), anyMatch(), noneMatch() 메서드는 자바의 <code>&amp;&amp;</code>, <code>||</code> 연산 처럼 활용된다.</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ** Predicate가 적어도 한 요소와 일치하는지 확인 **</span></span><br><span class="line"><span class="comment">// 메뉴 중 채식주의자 용 메뉴가 하나라도 존재하면 메세지 출력</span></span><br><span class="line"><span class="keyword">if</span> (menu.stream().anyMatch(Dish::isVegetarian)) &#123;</span><br><span class="line">    System.out.println(<span class="string">"The menu is (somewhat) vegetarian friendly!!"</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// ** Predicate가 모든 요소와 일치하는지 검사 **</span></span><br><span class="line"><span class="comment">// 모든 메뉴가 1000 칼로리 미만인지 확인</span></span><br><span class="line"><span class="keyword">boolean</span> isHealthy = menu.stream()</span><br><span class="line">                        .allMatch(d -&gt; d.getCalories() &lt; <span class="number">1000</span>);</span><br><span class="line"><span class="keyword">boolean</span> isHealthy = menu.stream()</span><br><span class="line">                        .noneMatch(d -&gt; d.getCalories() &gt;= <span class="number">1000</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// ** 임의의 요소 검색 **</span></span><br><span class="line"><span class="comment">// 채식 요리 선택</span></span><br><span class="line">Optional&lt;Dish&gt; dish = menu.stream()</span><br><span class="line">                          .filter(Dish::isVegetarian)</span><br><span class="line">                          .findAny()</span><br><span class="line">                          .ifPresent(d -&gt; System.out.println(d.getName()));</span><br><span class="line"></span><br><span class="line"><span class="comment">// ** 첫 번째 요소 검색 **</span></span><br><span class="line">List&lt;Integer&gt; someNumbers = Arrays.asList(<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>);</span><br><span class="line">Optional&lt;Integer&gt; firstSquareDivisibleByThree = someNumbers.stream()</span><br><span class="line">                                                           .map(n -&gt; n * n)</span><br><span class="line">                                                           .filter(n -&gt; n % <span class="number">3</span> == <span class="number">0</span>)</span><br><span class="line">                                                           .findFirst();    <span class="comment">// 9</span></span><br></pre></td></tr></table></figure>
+
+<h1 id="리듀싱"><a href="#리듀싱" class="headerlink" title="리듀싱"></a>리듀싱</h1><ul>
+<li>reduce()</li>
+</ul>
+<p>reduce 메서드는 <strong>병렬 처리가 가능</strong>하다는 장점이 있다.</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ** 요소의 합 **</span></span><br><span class="line"><span class="comment">// before</span></span><br><span class="line"><span class="keyword">int</span> sum = <span class="number">0</span>;</span><br><span class="line"><span class="keyword">for</span> (<span class="keyword">int</span> x : numbers) &#123;</span><br><span class="line">    sum += x;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// after</span></span><br><span class="line"><span class="keyword">int</span> sum = numbers.steam().reduce(<span class="number">0</span>, (a, b) -&gt; a + b);</span><br><span class="line"><span class="keyword">int</span> sum = numbers.steam().reduce(<span class="number">0</span>, Integer:sum);    <span class="comment">// 메서드 레퍼런스 사용</span></span><br><span class="line">Optional&lt;Integer&gt; sum = numbers.stream().reduce((a, b) -&gt; (a + b));    <span class="comment">// 초기값을 받지 않는 방법 (Optional 객체로 반환)</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// ** 최대값과 최소값 **</span></span><br><span class="line">Optional&lt;Integer&gt; max = numbers.stream().reduce(Integer::max);</span><br><span class="line">Optional&lt;Integer&gt; min = numbers.stream().reduce(Integer::min);</span><br></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th align="center">연산</th>
+<th align="center">형식</th>
+<th align="center">반환 형식</th>
+<th align="center">사용된 함수형 인터페이스 형식</th>
+<th align="center">함수 디스크립터</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">filter</td>
+<td align="center">중간 연산</td>
+<td align="center">Stream<t></t></td>
+<td align="center">Predicate<t></t></td>
+<td align="center">T -&gt; boolean</td>
+</tr>
+<tr>
+<td align="center">distinct</td>
+<td align="center">중간 연산<br>(상태 있는 언바운드)</td>
+<td align="center">Stream<t></t></td>
+<td align="center"></td>
+<td align="center"></td>
+</tr>
+<tr>
+<td align="center">skip</td>
+<td align="center">중간 연산<br>(상태 있는 언바운드)</td>
+<td align="center">Stream<t></t></td>
+<td align="center">Long</td>
+<td align="center"></td>
+</tr>
+<tr>
+<td align="center">limit</td>
+<td align="center">중간 연산<br>(상태 있는 언바운드)</td>
+<td align="center">Stream<t></t></td>
+<td align="center">Long</td>
+<td align="center"></td>
+</tr>
+<tr>
+<td align="center">map</td>
+<td align="center">중간 연산</td>
+<td align="center">Stream<t></t></td>
+<td align="center">Function&lt;T, R&gt;</td>
+<td align="center">T -&gt; R</td>
+</tr>
+<tr>
+<td align="center">flatMap</td>
+<td align="center">중간 연산</td>
+<td align="center">Stream<t></t></td>
+<td align="center">Function&lt;T, Stream<r>&gt;</r></td>
+<td align="center">T -&gt; Stream<r></r></td>
+</tr>
+<tr>
+<td align="center">sorted</td>
+<td align="center">중간 연산<br>(상태 있는 언바운드)</td>
+<td align="center">Stream<t></t></td>
+<td align="center">Comparator<t></t></td>
+<td align="center">(T, T) -&gt; int</td>
+</tr>
+<tr>
+<td align="center">anyMatch</td>
+<td align="center">최종 연산</td>
+<td align="center">boolean</td>
+<td align="center">Predicate<t></t></td>
+<td align="center">T -&gt; boolean</td>
+</tr>
+<tr>
+<td align="center">noneMatch</td>
+<td align="center">최종 연산</td>
+<td align="center">boolean</td>
+<td align="center">Predicate<t></t></td>
+<td align="center">T -&gt; boolean</td>
+</tr>
+<tr>
+<td align="center">allMatch</td>
+<td align="center">최종 연산</td>
+<td align="center">boolean</td>
+<td align="center">Predicate<t></t></td>
+<td align="center">T -&gt; boolean</td>
+</tr>
+<tr>
+<td align="center">findAny</td>
+<td align="center">최종 연산</td>
+<td align="center">Optional<t></t></td>
+<td align="center"></td>
+<td align="center"></td>
+</tr>
+<tr>
+<td align="center">findFirst</td>
+<td align="center">최종 연산</td>
+<td align="center">Optional<t></t></td>
+<td align="center"></td>
+<td align="center"></td>
+</tr>
+<tr>
+<td align="center">forEach</td>
+<td align="center">최종 연산</td>
+<td align="center">void</td>
+<td align="center">Consumer<t></t></td>
+<td align="center">T -&gt; void</td>
+</tr>
+<tr>
+<td align="center">Collect</td>
+<td align="center">최종 연산</td>
+<td align="center">R</td>
+<td align="center">Collector&lt;T, A, R&gt;</td>
+<td align="center"></td>
+</tr>
+<tr>
+<td align="center">Reduce</td>
+<td align="center">최종 연산<br>(상태 있는 언바운드)</td>
+<td align="center">Optional<t></t></td>
+<td align="center">BinaryOperator<t></t></td>
+<td align="center">(T, T) -&gt; T</td>
+</tr>
+<tr>
+<td align="center">count</td>
+<td align="center">최종 연산</td>
+<td align="center">long</td>
+<td align="center"></td>
+<td align="center"></td>
+</tr>
+</tbody></table>
+<h1 id="숫자형-스트림"><a href="#숫자형-스트림" class="headerlink" title="숫자형 스트림"></a>숫자형 스트림</h1><h2 id="기본형-특화-스트림"><a href="#기본형-특화-스트림" class="headerlink" title="기본형 특화 스트림"></a>기본형 특화 스트림</h2><p>Java8에는 박싱 비용을 줄이고 sum, max와 같이 자주 사용되는 숫자 관련 리듀싱 연산 메서드를 함께 제공하는 세 가지 기본형 특화 스트림을 제공한다.</p>
+<ul>
+<li>IntStream</li>
+<li>DoubleStream</li>
+<li>LongStream</li>
+<li>OptionalInt</li>
+<li>OptionalDouble</li>
+<li>OptionalLong</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ** 숫자 스트림으로 매핑 **</span></span><br><span class="line"><span class="comment">// mapToInt 메서드는 IntStream 인터페이스로 반환하며, </span></span><br><span class="line"><span class="comment">// 기본적으로 sum, min, average 등 다양한 유틸리티 메서드를 제공한다.</span></span><br><span class="line"><span class="keyword">int</span> calories = menu.stream()</span><br><span class="line">                   .mapToInt(Dish::getCalories)</span><br><span class="line">                   .sum();</span><br><span class="line"></span><br><span class="line"><span class="comment">// **객체 스트림으로 복원 **</span></span><br><span class="line"><span class="comment">// boxed() 메서드를 사용하여 특화 스트림을 일반 스트림으로 변환할 수 있다.</span></span><br><span class="line">IntStream intStream = menu.stream().mapToInt(Dish::getCalories);</span><br><span class="line">Stream&lt;Integer&gt; stream = intStream.boxed();</span><br><span class="line"></span><br><span class="line"><span class="comment">// Optional 컨테이너 클래스</span></span><br><span class="line">OptionalInt maxCalories = menu.stream()</span><br><span class="line">                              .mapToInt(Dish::getCalories)</span><br><span class="line">                              .max();</span><br><span class="line"><span class="keyword">int</span> max = maxCalories.orElse(<span class="number">1</span>);    <span class="comment">// 값이 없을 때 기본 최대값을 명시적으로 설정</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="숫자-범위"><a href="#숫자-범위" class="headerlink" title="숫자 범위"></a>숫자 범위</h2><p>IntStream과 LongStream은 특정 범위의 숫자를 이용하기 위한 2가지 정적 메서드를 제공한다. :</p>
+<ul>
+<li>range(시작값, 종료값) : 결과에 시작값, 종료값 미포함</li>
+<li>rangeClosed(시작값, 종료값) : 결과에 시작값, 종료값 포함</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">IntStream evenNumbers = IntStream.rangeClosed(<span class="number">1</span>, <span class="number">100</span>)    <span class="comment">// 1~100</span></span><br><span class="line">                                 .filter(n -&gt; n % <span class="number">2</span> == <span class="number">0</span>);    <span class="comment">// 짝수 필터링</span></span><br><span class="line">System.out.println(evenNumbers.count());    <span class="comment">// 50개</span></span><br></pre></td></tr></table></figure>
+
+<h1 id="스트림-만들기"><a href="#스트림-만들기" class="headerlink" title="스트림 만들기"></a>스트림 만들기</h1><h2 id="값으로-스트림-만들기"><a href="#값으로-스트림-만들기" class="headerlink" title="값으로 스트림 만들기"></a>값으로 스트림 만들기</h2><ul>
+<li>Stream.of() : 임의의 수로 인수를 받아 스트림으로 만든다.</li>
+<li>Stream.empty() : 스트림을 비운다.</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Stream&lt;String&gt; stream = Stream.of(<span class="string">"Java 8"</span>, <span class="string">"Lambdas"</span>, <span class="string">"In"</span>, <span class="string">"Action"</span>);</span><br><span class="line">stream.map(String.toUpperCase).forEach(System.out::println);</span><br><span class="line"></span><br><span class="line">Stream&lt;String&gt; emptyStream = Stream.empty();</span><br></pre></td></tr></table></figure>
+
+<h2 id="배열로-스트림-만들기"><a href="#배열로-스트림-만들기" class="headerlink" title="배열로 스트림 만들기"></a>배열로 스트림 만들기</h2><ul>
+<li>Arrays.stream()</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span>[] numbers = &#123;<span class="number">2</span>, <span class="number">3</span>, <span class="number">5</span>, <span class="number">7</span>, <span class="number">11</span>, <span class="number">13</span>&#125;;</span><br><span class="line"><span class="keyword">int</span> sum = Arrays.stream(numbers).sum();    <span class="comment">// 합계 41</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="파일로-스트림-만들기"><a href="#파일로-스트림-만들기" class="headerlink" title="파일로 스트림 만들기"></a>파일로 스트림 만들기</h2><p>NIO API(비블록 I/O)도 스트림 API를 활용할 수 있게 되었다.<br>java.nio.file.Files의 많은 정적 메서드가 스트림을 반환한다. (ex&gt; <code>Files.lines</code>)</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 파일에서 고유한 단어 수를 찾는 프로그램</span></span><br><span class="line"><span class="comment">// Files.lines 메서드는 주어진 파일의 행 스트림을 문자열로 반환한다.</span></span><br><span class="line"><span class="keyword">long</span> uniqueWords = <span class="number">0</span>;</span><br><span class="line"><span class="keyword">try</span> (Stream&lt;String&gt; lines = Files.lines(Paths.get(<span class="string">"data.txt"</span>), Charset.defaultCharset())) &#123;</span><br><span class="line">    uniqueWords = lines.flatMap(line -&gt; Arrays.stream(line.split(<span class="string">" "</span>)))</span><br><span class="line">                       .distinct()</span><br><span class="line">                       .count();</span><br><span class="line">&#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">    </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="함수로-무한-스트림-만들기"><a href="#함수로-무한-스트림-만들기" class="headerlink" title="함수로 무한 스트림 만들기"></a>함수로 무한 스트림 만들기</h2><p>스트림 API는 함수에서 스트림을 만들 수 있는 두 개의 정적 메서드를 제공한다.<br>이전에 봤던 크기가 고정된 컬렉션과는 달리 크기가 고정되지 않은 <strong>무한 스트림(Infinite Stream)</strong> 을 만들 수 있다. (언바운드 스트림(Unbounded Stream))<br>따라서 반드시 <code>limit(n)</code> 함수와 함께 사용해야 한다.</p>
+<ul>
+<li>Stream.iterate()<ul>
+<li>초기값과 람다를 인수로 받아서 새로운 값을 끊임없이 생산한다.</li>
+<li>일반적으로 연속된 일련의 값을 만들 때 사용한다.</li>
+</ul>
+</li>
+<li>Stream.generate()<ul>
+<li>Supplier<t>를 인수로 받아서 새로운 값을 생산한다.</t></li>
+</ul>
+</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// iterate</span></span><br><span class="line">Stream.iterate(<span class="number">0</span>, n -&gt; n + <span class="number">2</span>)</span><br><span class="line">      .limit(<span class="number">10</span>)</span><br><span class="line">      .forEach(System.out::println);    <span class="comment">// 0, 2, 4, 6, 8, 10, 12, 14, 16, 18 출력</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// generate</span></span><br><span class="line">Stream.generate(Math::random)</span><br><span class="line">      .limit(<span class="number">5</span>)</span><br><span class="line">      .forEach(System.out::println);</span><br></pre></td></tr></table></figure>
+
+
+            
+
+        </div>
+    </div>
+    <div id="post-footer" class="post-footer main-content-wrap">
+        
+            <div class="post-footer-tags">
+                <span class="text-color-light text-small">TAGGED IN</span><br>
+                
+    <a class="tag tag--primary tag--small t-link" href="/tags/Java/">Java</a> <a class="tag tag--primary tag--small t-link" href="/tags/Java8/">Java8</a> <a class="tag tag--primary tag--small t-link" href="/tags/Stream/">Stream</a>
+
+            </div>
+        
+        
+            <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2019/03/13/springframework-testing-private-method/" data-tooltip="Private 메소드 테스트하기" aria-label="PREVIOUS: Private 메소드 테스트하기">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2019/02/12/java8-stream-basic/" data-tooltip="스트림(Stream) 소개" aria-label="NEXT: 스트림(Stream) 소개">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="_blank" href="https://www.facebook.com/sharer/sharer.php?u=https://hyunto.github.io/2019/02/17/java8-stream-practice/" title="Share on Facebook" rel="external nofollow noopener noreferrer">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="_blank" href="https://twitter.com/intent/tweet?text=https://hyunto.github.io/2019/02/17/java8-stream-practice/" title="Share on Twitter" rel="external nofollow noopener noreferrer">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="_blank" href="https://plus.google.com/share?url=https://hyunto.github.io/2019/02/17/java8-stream-practice/" title="Share on Google+" rel="external nofollow noopener noreferrer">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#table-of-contents" aria-label="Table of Contents">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+        
+        
+            
+                <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+            
+        
+    </div>
+</article>
+
+
+
+                <footer id="footer" class="main-content-wrap">
+    <span class="copyrights">
+        Copyrights &copy; 2019 hyunto. All Rights Reserved.
+    </span>
+</footer>
+
+            </div>
+            
+                <div id="bottom-bar" class="post-bottom-bar" data-behavior="2">
+                    
+<script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<script>
+  (adsbygoogle = window.adsbygoogle || []).push({
+    google_ad_client: "ca-pub-8873866934903362",
+    enable_page_level_ads: true
+  });
+</script>
+
+
+                    <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2019/03/13/springframework-testing-private-method/" data-tooltip="Private 메소드 테스트하기" aria-label="PREVIOUS: Private 메소드 테스트하기">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2019/02/12/java8-stream-basic/" data-tooltip="스트림(Stream) 소개" aria-label="NEXT: 스트림(Stream) 소개">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="_blank" href="https://www.facebook.com/sharer/sharer.php?u=https://hyunto.github.io/2019/02/17/java8-stream-practice/" title="Share on Facebook" rel="external nofollow noopener noreferrer">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="_blank" href="https://twitter.com/intent/tweet?text=https://hyunto.github.io/2019/02/17/java8-stream-practice/" title="Share on Twitter" rel="external nofollow noopener noreferrer">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="_blank" href="https://plus.google.com/share?url=https://hyunto.github.io/2019/02/17/java8-stream-practice/" title="Share on Google+" rel="external nofollow noopener noreferrer">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#table-of-contents" aria-label="Table of Contents">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+                </div>
+                <div id="share-options-bar" class="share-options-bar" data-behavior="2">
+    <i id="btn-close-shareoptions" class="fa fa-close"></i>
+    <ul class="share-options">
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="_blank" href="https://www.facebook.com/sharer/sharer.php?u=https://hyunto.github.io/2019/02/17/java8-stream-practice/" rel="external nofollow noopener noreferrer">
+                    <i class="fab fa-facebook" aria-hidden="true"></i><span>Share on Facebook</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="_blank" href="https://twitter.com/intent/tweet?text=https://hyunto.github.io/2019/02/17/java8-stream-practice/" rel="external nofollow noopener noreferrer">
+                    <i class="fab fa-twitter" aria-hidden="true"></i><span>Share on Twitter</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="_blank" href="https://plus.google.com/share?url=https://hyunto.github.io/2019/02/17/java8-stream-practice/" rel="external nofollow noopener noreferrer">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i><span>Share on Google+</span>
+                </a>
+            </li>
+        
+    </ul>
+</div>
+
+            
+        </div>
+        
+
+
+    
+        
+    
+
+<div id="about">
+    <div id="about-card">
+        <div id="about-btn-close">
+            <i class="fa fa-times"></i>
+        </div>
+        
+            <img id="about-card-picture" src="/assets/images/author.jpg" alt="Author&#39;s picture">
+        
+            <h4 id="about-card-name">hyunto</h4>
+        
+            <div id="about-card-bio"><p>호학심사(好學深思)<br>즐거이 배우고 깊이 생각하라</p>
+</div>
+        
+        
+            <div id="about-card-job">
+                <i class="fa fa-briefcase"></i>
+                <br>
+                <p>Software Engineer</p>
+
+            </div>
+        
+        
+            <div id="about-card-location">
+                <i class="fa fa-map-marker"></i>
+                <br>
+                Republic of Korea, Seoul
+            </div>
+        
+    </div>
+</div>
+
+        
+            <div id="algolia-search-modal" class="modal-container">
+    <div class="modal">
+        <div class="modal-header">
+            <span class="close-button"><i class="fa fa-close"></i></span>
+            <a href="https://algolia.com" target="_blank" rel="external nofollow noopener noreferrer" class="searchby-algolia text-color-light link-unstyled">
+                <span class="searchby-algolia-text text-color-light text-small">by</span>
+                <img class="searchby-algolia-logo" src="https://www.algolia.com/static_assets/images/press/downloads/algolia-light.svg">
+            </a>
+            <i class="search-icon fa fa-search"></i>
+            <form id="algolia-search-form">
+                <input type="text" id="algolia-search-input" name="search" class="form-control input--large search-input" placeholder="Search ">
+            </form>
+        </div>
+        <div class="modal-body">
+            <div class="no-result text-color-light text-center">no post found</div>
+            <div class="results">
+                
+                <div class="media">
+                    
+                    <div class="media-body">
+                        <a class="link-unstyled" href="https://hyunto.github.io/2018/07/26/Hexo-사용법/">
+                            <h3 class="media-heading">Hexo 사용법</h3>
+                        </a>
+                        <span class="media-meta">
+                            <span class="media-date text-small">
+                                
+                                    Jul 26, 2018
+                                
+                            </span>
+                        </span>
+                        <div class="media-content hide-xs font-merryweather"><p>2018년 초, Hexo를 사용해 이 블로그를 만들었으나 집, 회사 PC에서 블로그 Source를 다운받아 Deploy하는 과정에서 여러번 블로그를 망가뜨려 버렸습니다.<br>같은 실수를 반복하지 않기 위해 블로그 소스코드 다운, 빌드, 배포와 글을 작성하는 방법을 간단히 정리합니다.</p></div>
+                    </div>
+                    <div style="clear:both;"></div>
+                    <hr>
+                </div>
+                
+                <div class="media">
+                    
+                    <div class="media-body">
+                        <a class="link-unstyled" href="https://hyunto.github.io/2018/07/27/자주-사용하는-Docker-명령어-정리/">
+                            <h3 class="media-heading">자주 사용하는 Docker 명령어 정리</h3>
+                        </a>
+                        <span class="media-meta">
+                            <span class="media-date text-small">
+                                
+                                    Jul 27, 2018
+                                
+                            </span>
+                        </span>
+                        <div class="media-content hide-xs font-merryweather"><p>업무 중 자주 사용되는 Docker CLI명령어와 Dockerfile 키워드를 정리합니다.<br>또한 업무중 겪었던 Docker 관련 이슈를 정리합니다.</p></div>
+                    </div>
+                    <div style="clear:both;"></div>
+                    <hr>
+                </div>
+                
+                <div class="media">
+                    
+                    <div class="media-left">
+                        <a class="link-unstyled" href="https://hyunto.github.io/2018/11/16/Book-Review-자바-ORM-표준-JPA-프로그래밍/">
+                            <img class="media-image" src="https://hyunto.github.io/2018/11/16/Book-Review-자바-ORM-표준-JPA-프로그래밍/book_cover.png" width="90" height="90">
+                        </a>
+                    </div>
+                    
+                    <div class="media-body">
+                        <a class="link-unstyled" href="https://hyunto.github.io/2018/11/16/Book-Review-자바-ORM-표준-JPA-프로그래밍/">
+                            <h3 class="media-heading">[Book Review] 자바 ORM 표준 JPA 프로그래밍</h3>
+                        </a>
+                        <span class="media-meta">
+                            <span class="media-date text-small">
+                                
+                                    Nov 16, 2018
+                                
+                            </span>
+                        </span>
+                        <div class="media-content hide-xs font-merryweather"><p>자바 ORM 표준 JPA 프로그래밍 (2015) 독서/스터디 후기</p></div>
+                    </div>
+                    <div style="clear:both;"></div>
+                    <hr>
+                </div>
+                
+                <div class="media">
+                    
+                    <div class="media-body">
+                        <a class="link-unstyled" href="https://hyunto.github.io/2018/12/03/Java8-Behavior-Parameterization/">
+                            <h3 class="media-heading">동작 파라미터화 (Behavior Parameterization)</h3>
+                        </a>
+                        <span class="media-meta">
+                            <span class="media-date text-small">
+                                
+                                    Dec 3, 2018
+                                
+                            </span>
+                        </span>
+                        <div class="media-content hide-xs font-merryweather"><p><code>동작 파라미터화 (Behavior Parameterization)</code> 는 “다양한 동작을 수행할 수 있는 코드 블럭을 메서드 파라미터로 전달”함으로써 자주 변경되는 요구사항에 효과적으로 대응할 수 있는 방식을 의미합니다.</p>
+<p>여기서는 자주 변경되는 요구사항의 예시를 기반으로 동작 파라미터화를 한 후 Java8에서 추가된 Lambda로 코드를 간소화하는 과정을 보여줍니다.</p></div>
+                    </div>
+                    <div style="clear:both;"></div>
+                    <hr>
+                </div>
+                
+                <div class="media">
+                    
+                    <div class="media-body">
+                        <a class="link-unstyled" href="https://hyunto.github.io/2018/12/11/git-secret/">
+                            <h3 class="media-heading">git-secret</h3>
+                        </a>
+                        <span class="media-meta">
+                            <span class="media-date text-small">
+                                
+                                    Dec 11, 2018
+                                
+                            </span>
+                        </span>
+                        <div class="media-content hide-xs font-merryweather"><p>비밀번호, Secret Key 값과 같이 보호되야 하는 데이터가 포함된 파일을 그냥 Git Commit &amp; Push 하면 개인적인 데이터가 노출되는 문제점이 발생합니다.</p>
+<p><code>git-secret</code> 을 사용하면 개인적인 데이터가 포함된 파일을 암호화 한 후에 Git 저장소에 저장함으로써 문제점을 해결할 수 있습니다.</p></div>
+                    </div>
+                    <div style="clear:both;"></div>
+                    <hr>
+                </div>
+                
+                <div class="media">
+                    
+                    <div class="media-body">
+                        <a class="link-unstyled" href="https://hyunto.github.io/2019/01/15/introduction-to-oauth2.0/">
+                            <h3 class="media-heading">OAuth 2.0 - 기본개념 및 Authorization Grant</h3>
+                        </a>
+                        <span class="media-meta">
+                            <span class="media-date text-small">
+                                
+                                    Jan 15, 2019
+                                
+                            </span>
+                        </span>
+                        <div class="media-content hide-xs font-merryweather"><p>최근 OAuth 2.0에 대해 공부하면서 다양한 Grant 종류가 존재함을 알게 되었습니다.<br>기본 개념과 Grant 종류에 대해 잘 정리되어 OAuth 2.0 이해에 도움됬던 사이트들의 내용을 정리합니다.</p></div>
+                    </div>
+                    <div style="clear:both;"></div>
+                    <hr>
+                </div>
+                
+                <div class="media">
+                    
+                    <div class="media-body">
+                        <a class="link-unstyled" href="https://hyunto.github.io/2019/02/11/java8-lambda/">
+                            <h3 class="media-heading">람다 표현식 (Lambda Expression)</h3>
+                        </a>
+                        <span class="media-meta">
+                            <span class="media-date text-small">
+                                
+                                    Feb 11, 2019
+                                
+                            </span>
+                        </span>
+                        <div class="media-content hide-xs font-merryweather"><p>Java8에서 새롭게 추가된 람다 표현식을 정리합니다.</p></div>
+                    </div>
+                    <div style="clear:both;"></div>
+                    <hr>
+                </div>
+                
+                <div class="media">
+                    
+                    <div class="media-body">
+                        <a class="link-unstyled" href="https://hyunto.github.io/2019/02/12/java8-stream-basic/">
+                            <h3 class="media-heading">스트림(Stream) 소개</h3>
+                        </a>
+                        <span class="media-meta">
+                            <span class="media-date text-small">
+                                
+                                    Feb 12, 2019
+                                
+                            </span>
+                        </span>
+                        <div class="media-content hide-xs font-merryweather"><p>Java8에서 새로 추가된 스트림의 기초를 정리합니다.</p></div>
+                    </div>
+                    <div style="clear:both;"></div>
+                    <hr>
+                </div>
+                
+                <div class="media">
+                    
+                    <div class="media-body">
+                        <a class="link-unstyled" href="https://hyunto.github.io/2019/02/17/java8-stream-practice/">
+                            <h3 class="media-heading">스트림(Stream) 활용</h3>
+                        </a>
+                        <span class="media-meta">
+                            <span class="media-date text-small">
+                                
+                                    Feb 17, 2019
+                                
+                            </span>
+                        </span>
+                        <div class="media-content hide-xs font-merryweather"><p>Java8 Stream 활용 방안을 정리합니다.</p></div>
+                    </div>
+                    <div style="clear:both;"></div>
+                    <hr>
+                </div>
+                
+                <div class="media">
+                    
+                    <div class="media-body">
+                        <a class="link-unstyled" href="https://hyunto.github.io/2019/03/13/springframework-testing-private-method/">
+                            <h3 class="media-heading">Private 메소드 테스트하기</h3>
+                        </a>
+                        <span class="media-meta">
+                            <span class="media-date text-small">
+                                
+                                    Mar 13, 2019
+                                
+                            </span>
+                        </span>
+                        <div class="media-content hide-xs font-merryweather"><p>단위 테스트 작성시 Private 접근자를 가진 메소드를 테스트하는 방법을 정리합니다.</p></div>
+                    </div>
+                    <div style="clear:both;"></div>
+                    <hr>
+                </div>
+                
+            </div>
+        </div>
+        <div class="modal-footer">
+            <p class="results-count text-medium" data-message-zero="no post found" data-message-one="1 post found" data-message-other="{n} posts found">
+                10 posts found
+            </p>
+        </div>
+    </div>
+</div>
+
+        
+        
+<div id="cover" style="background-image:url('/assets/images/cover_the_legend_of_zelda.jpg');"></div>
+        <!--SCRIPTS-->
+<script src="/assets/js/script-x2vft4khydnm3fle5k6i00lpg0w2a1yxes6bmk6mdnvmeqzmtipaw6lhf8rx.min.js"></script>
+<!--SCRIPTS END-->
+
+    
+        <script>
+             var disqus_config = function () {
+                 this.page.url = 'https://hyunto.github.io/2019/02/17/java8-stream-practice/';
+                 
+                    this.page.identifier = '2019/02/17/java8-stream-practice/';
+                 
+             };
+            (function() {
+                var d = document, s = d.createElement('script');
+                var disqus_shortname = 'hyunto';
+                s.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+
+                s.setAttribute('data-timestamp', +new Date());
+                (d.head || d.body).appendChild(s);
+            })();
+        </script>
+    
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.14.1/moment-with-locales.min.js"></script>
+    <script src="//cdn.jsdelivr.net/algoliasearch/3/algoliasearch.min.js"></script>
+    <script>
+        var algoliaClient = algoliasearch('XKYZJU6GUU', '6f712de882b0c14f1ba276f5970d1d44');
+        var algoliaIndex = algoliaClient.initIndex('hyunto.github.io');
+    </script>
+
+
+    </body>
+</html>

@@ -1,0 +1,790 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="즐거이 배우고 깊이 생각하라">
+    <title>Hexo 사용법 - 즐거이 배우고 깊이 생각하라</title>
+    <meta name="author" content="hyunto">
+    
+    
+        <link rel="icon" href="https://hyunto.github.io/assets/images/favicon.ico">
+    
+    
+        <link rel="alternate" type="application/atom+xml" title="RSS" href="/atom.xml">
+    
+    <script type="application/ld+json">{"@context":"http://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"hyunto","sameAs":["https://github.com/hyunto","https://blog.naver.com/eqelizer","mailto:jhyunto@gmail.com"],"image":"author.jpg"},"articleBody":"2018년 초, Hexo를 사용해 이 블로그를 만들었으나 집, 회사 PC에서 블로그 Source를 다운받아 Deploy하는 과정에서 여러번 블로그를 망가뜨려 버렸습니다.같은 실수를 반복하지 않기 위해 블로그 소스코드 다운, 빌드, 배포와 글을 작성하는 방법을 간단히 정리합니다.\n\n\nDownload, Build, DeployHexo는 Jikyll과 다르게 GitHub Page로 배포되는 소스와 원본 소스가 분리되어 있기 때문에 2개의 GitHub Repository를 생성해야 합니다.\n\nhyunto/hyunto.github.io : GitHub Page\nhyunto/hyunto.github.io-source : Hexo\n\n따라서 주로 hyunto/hyunto.github.io-source를 주로 다운로드 한 후 배포하는데, 매번 실수로 Hexo 테마 소스를 빌드하지 않고 배포하여 블로그 페이지가 깨져버렸습니다. 처음에는 프론트엔드 쪽 지식이 부족해서 원인을 찾지 못하다가 최근 Vue.js를 공부하면서 문득 프론트엔드 빌드를 하지 않았다는 사실을 깨닳았습니다. 이번엔 빌드를 하려니 제대로 되지 않아 Tranquilpeak Hexo 테마 버전을 1.11.0에서 3.0.0 버전으로 업그레이드하여 빌드를 성공했습니다.\n참고로 Tranquilpeak Hexo 테마 3.0.0 버전은 Font Awesome 버전 업그레이드를 했으나 이를 제대로 반영하지 않아 버그가 존재합니다. 이 블로그는 현재까지 발견된 버그를 직접 수정했습니다.\n1234567891011121314151617181920212223242526### GitHub에서 소스코드 다운로드 및 Git Config 설정##$ git clone https://github.com/hyunto/hyunto.github.io-source.git$ cd hyunto.github.io-source$ git config --local user.name jhyunto$ git config --local user.email jhyunto@gmail.com### Hexo Tranquilpeak 테마 의존성 설치 및 빌드# 참고로 내가 사용하는 테마는 LouisBarranqueiro/hexo-theme-tranquilpeak 이고, 2.0.0 Release 부터 Bower를 더 이상 사용하지 않습니다.# 따라서 의존성 설치시 bower install 명령어를 실행하지 않습니다.##$ cd themes/tranquilpeak$ npm install$ grunt build$ grunt buildProd### Hexo 의존성 설치 및 Hexo 서버 실행##$ cd ./../../$ npm install$ hexo clean$ hexo generate$ hexo server\n\n블로그 글쓰기ScaffoldHexo에는 초안 작성을 위한 Draft 와 즉시 배포를 위한 Post 가 있습니다. (Page 라는 것도 있으나 사용하지 않습니다.)\n일관된 포맷으로 블로그 글을 작성하기 위해 템플릿 파일을 사용합니다. scaffolds/draft.md 파일과 scaffolds/post.md 파일을 나만의  템플릿으로 수정했습니다. \n1234567891011---title: &#123;&#123; title &#125;&#125;date: &#123;&#123; date &#125;&#125;tags:  -categories:  -thumbnailImage:---&lt;!-- more --&gt;\n\nDraft 또는 Post 생성 및 배포블로그에 즉시 글을 올리려면 Post 를 생성하고, 초안을 작성하다가 완성 후에 올리려면 Draft 를 생성합니다.Draft 는 초안이기 때문에 deploy 명령어를 통해 배포되지 않습니다. 완성된 Draft 를 배포하려면 publish 명령어를 사용합니다.publish 명령어는 source/_drafts 에 있던 초안을 source/_posts 디렉토리로 옮겨주는 역할을 합니다.\n123456789101112131415161718### Post 생성##$ hexo new post \"New Post Title\"### Draft 생성 및 Publish##$ hexo new draft 'New Draft Title'$ hexo publish 'New Draft Title'### 배포##$ hexo clean$ hexo generate$ hexo algolia$ hexo deploy\n\n글 원본 관리새로 작성한 블로그 포스트를 배포한 후에는 반드시 git commit을 해야 합니다. 그렇지 않으면 원본 Markdown 파일을 손실할 수도 있습니다.\n123$ git add .$ git commit -m \"commit_message\"$ git push","dateCreated":"2018-07-26T18:41:29+09:00","dateModified":"2019-08-08T23:23:01+09:00","datePublished":"2018-07-26T18:41:29+09:00","description":"2018년 초, Hexo를 사용해 이 블로그를 만들었으나 집, 회사 PC에서 블로그 Source를 다운받아 Deploy하는 과정에서 여러번 블로그를 망가뜨려 버렸습니다.같은 실수를 반복하지 않기 위해 블로그 소스코드 다운, 빌드, 배포와 글을 작성하는 방법을 간단히 정리합니다.","headline":"Hexo 사용법","image":[],"mainEntityOfPage":{"@type":"WebPage","@id":"https://hyunto.github.io/2018/07/26/Hexo-사용법/"},"publisher":{"@type":"Organization","name":"hyunto","sameAs":["https://github.com/hyunto","https://blog.naver.com/eqelizer","mailto:jhyunto@gmail.com"],"image":"author.jpg","logo":{"@type":"ImageObject","url":"author.jpg"}},"url":"https://hyunto.github.io/2018/07/26/Hexo-사용법/","keywords":"Hexo"}</script>
+    <meta name="description" content="2018년 초, Hexo를 사용해 이 블로그를 만들었으나 집, 회사 PC에서 블로그 Source를 다운받아 Deploy하는 과정에서 여러번 블로그를 망가뜨려 버렸습니다.같은 실수를 반복하지 않기 위해 블로그 소스코드 다운, 빌드, 배포와 글을 작성하는 방법을 간단히 정리합니다.">
+<meta name="keywords" content="Hexo">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="Hexo 사용법">
+<meta property="og:url" content="https://hyunto.github.io/2018/07/26/Hexo-사용법/index.html">
+<meta property="og:site_name" content="즐거이 배우고 깊이 생각하라">
+<meta property="og:description" content="2018년 초, Hexo를 사용해 이 블로그를 만들었으나 집, 회사 PC에서 블로그 Source를 다운받아 Deploy하는 과정에서 여러번 블로그를 망가뜨려 버렸습니다.같은 실수를 반복하지 않기 위해 블로그 소스코드 다운, 빌드, 배포와 글을 작성하는 방법을 간단히 정리합니다.">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2019-08-08T14:23:01.921Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Hexo 사용법">
+<meta name="twitter:description" content="2018년 초, Hexo를 사용해 이 블로그를 만들었으나 집, 회사 PC에서 블로그 Source를 다운받아 Deploy하는 과정에서 여러번 블로그를 망가뜨려 버렸습니다.같은 실수를 반복하지 않기 위해 블로그 소스코드 다운, 빌드, 배포와 글을 작성하는 방법을 간단히 정리합니다.">
+    
+    
+        
+    
+    
+        <meta property="og:image" content="https://hyunto.github.io/assets/images/author.jpg">
+    
+    
+    
+    
+    <!--STYLES-->
+    <link rel="stylesheet" href="/assets/css/style-2dwn68oxrx7garnr65iriskewle1uhxjgd7vwi5ghcmktc2mzvq8clkrcp9l.min.css">
+    <!--STYLES END-->
+    
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+        ga('create', 'UA-113695151-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+
+    
+</head>
+
+    <body>
+        <div id="blog">
+            <!-- Define author's picture -->
+
+
+<header id="header" data-behavior="2">
+    <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+    <div class="header-title">
+        <a class="header-title-link" href="/ ">즐거이 배우고 깊이 생각하라</a>
+    </div>
+    
+        
+            <a class="header-right-icon open-algoria-search" href="#about">
+        
+        
+            <i class="fa fa-lg fa-search"></i>
+        
+        </a>
+    
+</header>
+
+            <!-- Define author's picture -->
+
+
+
+        
+    
+
+<nav id="sidebar" data-behavior="2">
+    <div class="sidebar-container">
+        
+            <div class="sidebar-profile">
+                <a href="/#about">
+                    <img class="sidebar-profile-picture" src="/assets/images/author.jpg" alt="Author&#39;s picture">
+                </a>
+                <h4 class="sidebar-profile-name">hyunto</h4>
+                
+                    <h5 class="sidebar-profile-bio"><p>호학심사(好學深思)<br>즐거이 배우고 깊이 생각하라</p>
+</h5>
+                
+            </div>
+        
+        
+            <ul class="sidebar-buttons">
+            
+                <li class="sidebar-button">
+                    
+                        <a class="sidebar-button-link " href="/ " title="Home">
+                    
+                        <i class="sidebar-button-icon fa fa-home" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Home</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a class="sidebar-button-link " href="/all-categories" title="Categories">
+                    
+                        <i class="sidebar-button-icon fa fa-bookmark" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Categories</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a class="sidebar-button-link " href="/all-tags" title="Tags">
+                    
+                        <i class="sidebar-button-icon fa fa-tags" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Tags</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a class="sidebar-button-link " href="/all-archives" title="Archives">
+                    
+                        <i class="sidebar-button-icon fa fa-archive" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Archives</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a class="sidebar-button-link open-algolia-search" href="#search" title="Search">
+                    
+                        <i class="sidebar-button-icon fa fa-search" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Search</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a class="sidebar-button-link " href="#about" title="About">
+                    
+                        <i class="sidebar-button-icon fa fa-question" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">About</span>
+                    </a>
+            </li>
+            
+        </ul>
+        
+            <ul class="sidebar-buttons">
+            
+                <li class="sidebar-button">
+                    
+                        <a class="sidebar-button-link " href="https://github.com/hyunto" target="_blank" rel="external nofollow noopener noreferrer" title="GitHub">
+                    
+                        <i class="sidebar-button-icon fab fa-github" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">GitHub</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a class="sidebar-button-link " href="https://blog.naver.com/eqelizer" target="_blank" rel="external nofollow noopener noreferrer" title="Previous Blog">
+                    
+                        <i class="sidebar-button-icon fas fa-paper-plane" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Previous Blog</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a class="sidebar-button-link " href="mailto:jhyunto@gmail.com" target="_blank" rel="external nofollow noopener noreferrer" title="Mail">
+                    
+                        <i class="sidebar-button-icon fa fa-envelope" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Mail</span>
+                    </a>
+            </li>
+            
+        </ul>
+        
+            <ul class="sidebar-buttons">
+            
+                <li class="sidebar-button">
+                    
+                        <a class="sidebar-button-link " href="/atom.xml" title="RSS">
+                    
+                        <i class="sidebar-button-icon fa fa-rss" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">RSS</span>
+                    </a>
+            </li>
+            
+        </ul>
+        
+    </div>
+</nav>
+
+            
+            <div id="main" data-behavior="2" class="
+                        hasCoverMetaIn
+                        ">
+                
+<article class="post">
+    
+    
+        <div class="post-header main-content-wrap text-left">
+    
+        <h1 class="post-title">
+            Hexo 사용법
+        </h1>
+    
+    
+        <div class="post-meta">
+    <time datetime="2018-07-26T18:41:29+09:00">
+	
+		    Jul 26, 2018
+    	
+    </time>
+    
+        <span>in </span>
+        
+    <a class="category-link" href="/categories/Blog/">Blog</a>
+
+
+    
+</div>
+
+    
+</div>
+
+    
+    <div class="post-content markdown">
+        <div class="main-content-wrap">
+            <p>2018년 초, Hexo를 사용해 이 블로그를 만들었으나 집, 회사 PC에서 블로그 Source를 다운받아 Deploy하는 과정에서 여러번 블로그를 망가뜨려 버렸습니다.<br>같은 실수를 반복하지 않기 위해 블로그 소스코드 다운, 빌드, 배포와 글을 작성하는 방법을 간단히 정리합니다.</p>
+<a id="more"></a>
+
+<h1 id="Download-Build-Deploy"><a href="#Download-Build-Deploy" class="headerlink" title="Download, Build, Deploy"></a>Download, Build, Deploy</h1><p>Hexo는 Jikyll과 다르게 GitHub Page로 배포되는 소스와 원본 소스가 분리되어 있기 때문에 2개의 GitHub Repository를 생성해야 합니다.</p>
+<ul>
+<li><a href="https://github.com/hyunto/hyunto.github.io" rel="external nofollow noopener noreferrer" target="_blank">hyunto/hyunto.github.io</a> : GitHub Page</li>
+<li><a href="https://github.com/hyunto/hyunto.github.io-source" rel="external nofollow noopener noreferrer" target="_blank">hyunto/hyunto.github.io-source</a> : Hexo</li>
+</ul>
+<p>따라서 주로 <a href="https://github.com/hyunto/hyunto.github.io-source" rel="external nofollow noopener noreferrer" target="_blank">hyunto/hyunto.github.io-source</a>를 주로 다운로드 한 후 배포하는데, 매번 실수로 Hexo 테마 소스를 빌드하지 않고 배포하여 블로그 페이지가 깨져버렸습니다. 처음에는 프론트엔드 쪽 지식이 부족해서 원인을 찾지 못하다가 최근 Vue.js를 공부하면서 문득 프론트엔드 빌드를 하지 않았다는 사실을 깨닳았습니다. 이번엔 빌드를 하려니 제대로 되지 않아 Tranquilpeak Hexo 테마 버전을 1.11.0에서 3.0.0 버전으로 업그레이드하여 빌드를 성공했습니다.</p>
+<p>참고로 Tranquilpeak Hexo 테마 3.0.0 버전은 Font Awesome 버전 업그레이드를 했으나 이를 제대로 반영하지 않아 버그가 존재합니다. 이 블로그는 현재까지 발견된 버그를 직접 수정했습니다.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">##</span></span><br><span class="line"><span class="comment"># GitHub에서 소스코드 다운로드 및 Git Config 설정</span></span><br><span class="line"><span class="comment">##</span></span><br><span class="line">$ git <span class="built_in">clone</span> https://github.com/hyunto/hyunto.github.io-source.git</span><br><span class="line">$ <span class="built_in">cd</span> hyunto.github.io-source</span><br><span class="line">$ git config --<span class="built_in">local</span> user.name jhyunto</span><br><span class="line">$ git config --<span class="built_in">local</span> user.email jhyunto@gmail.com</span><br><span class="line"></span><br><span class="line"><span class="comment">##</span></span><br><span class="line"><span class="comment"># Hexo Tranquilpeak 테마 의존성 설치 및 빌드</span></span><br><span class="line"><span class="comment"># 참고로 내가 사용하는 테마는 LouisBarranqueiro/hexo-theme-tranquilpeak 이고, 2.0.0 Release 부터 Bower를 더 이상 사용하지 않습니다.</span></span><br><span class="line"><span class="comment"># 따라서 의존성 설치시 bower install 명령어를 실행하지 않습니다.</span></span><br><span class="line"><span class="comment">##</span></span><br><span class="line">$ <span class="built_in">cd</span> themes/tranquilpeak</span><br><span class="line">$ npm install</span><br><span class="line">$ grunt build</span><br><span class="line">$ grunt buildProd</span><br><span class="line"></span><br><span class="line"><span class="comment">##</span></span><br><span class="line"><span class="comment"># Hexo 의존성 설치 및 Hexo 서버 실행</span></span><br><span class="line"><span class="comment">##</span></span><br><span class="line">$ <span class="built_in">cd</span> ./../../</span><br><span class="line">$ npm install</span><br><span class="line">$ hexo clean</span><br><span class="line">$ hexo generate</span><br><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+
+<h1 id="블로그-글쓰기"><a href="#블로그-글쓰기" class="headerlink" title="블로그 글쓰기"></a>블로그 글쓰기</h1><h2 id="Scaffold"><a href="#Scaffold" class="headerlink" title="Scaffold"></a>Scaffold</h2><p>Hexo에는 초안 작성을 위한 <code>Draft</code> 와 즉시 배포를 위한 <code>Post</code> 가 있습니다. (<code>Page</code> 라는 것도 있으나 사용하지 않습니다.)</p>
+<p>일관된 포맷으로 블로그 글을 작성하기 위해 템플릿 파일을 사용합니다. <code>scaffolds/draft.md</code> 파일과 <code>scaffolds/post.md</code> 파일을 나만의  템플릿으로 수정했습니다. </p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">---</span></span><br><span class="line"><span class="attr">title:</span> <span class="string">&#123;&#123;</span> <span class="string">title</span> <span class="string">&#125;&#125;</span></span><br><span class="line"><span class="attr">date:</span> <span class="string">&#123;&#123;</span> <span class="string">date</span> <span class="string">&#125;&#125;</span></span><br><span class="line"><span class="attr">tags:</span></span><br><span class="line"><span class="bullet">  -</span></span><br><span class="line"><span class="attr">categories:</span></span><br><span class="line"><span class="bullet">  -</span></span><br><span class="line"><span class="attr">thumbnailImage:</span></span><br><span class="line"><span class="meta">---</span></span><br><span class="line"></span><br><span class="line"><span class="string">&lt;!--</span> <span class="string">more</span> <span class="bullet">--&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="Draft-또는-Post-생성-및-배포"><a href="#Draft-또는-Post-생성-및-배포" class="headerlink" title="Draft 또는 Post 생성 및 배포"></a>Draft 또는 Post 생성 및 배포</h2><p>블로그에 즉시 글을 올리려면 <code>Post</code> 를 생성하고, 초안을 작성하다가 완성 후에 올리려면 <code>Draft</code> 를 생성합니다.<br><code>Draft</code> 는 초안이기 때문에 <code>deploy</code> 명령어를 통해 배포되지 않습니다. 완성된 <code>Draft</code> 를 배포하려면 <code>publish</code> 명령어를 사용합니다.<br><code>publish</code> 명령어는 <code>source/_drafts</code> 에 있던 초안을 <code>source/_posts</code> 디렉토리로 옮겨주는 역할을 합니다.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">##</span></span><br><span class="line"><span class="comment"># Post 생성</span></span><br><span class="line"><span class="comment">##</span></span><br><span class="line">$ hexo new post <span class="string">"New Post Title"</span></span><br><span class="line"></span><br><span class="line"><span class="comment">##</span></span><br><span class="line"><span class="comment"># Draft 생성 및 Publish</span></span><br><span class="line"><span class="comment">##</span></span><br><span class="line">$ hexo new draft <span class="string">'New Draft Title'</span></span><br><span class="line">$ hexo publish <span class="string">'New Draft Title'</span></span><br><span class="line"></span><br><span class="line"><span class="comment">##</span></span><br><span class="line"><span class="comment"># 배포</span></span><br><span class="line"><span class="comment">##</span></span><br><span class="line">$ hexo clean</span><br><span class="line">$ hexo generate</span><br><span class="line">$ hexo algolia</span><br><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
+
+<h2 id="글-원본-관리"><a href="#글-원본-관리" class="headerlink" title="글 원본 관리"></a>글 원본 관리</h2><p>새로 작성한 블로그 포스트를 배포한 후에는 반드시 git commit을 해야 합니다. 그렇지 않으면 원본 Markdown 파일을 손실할 수도 있습니다.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ git add .</span><br><span class="line">$ git commit -m <span class="string">"commit_message"</span></span><br><span class="line">$ git push</span><br></pre></td></tr></table></figure>
+            
+
+        </div>
+    </div>
+    <div id="post-footer" class="post-footer main-content-wrap">
+        
+            <div class="post-footer-tags">
+                <span class="text-color-light text-small">TAGGED IN</span><br>
+                
+    <a class="tag tag--primary tag--small t-link" href="/tags/Hexo/">Hexo</a>
+
+            </div>
+        
+        
+            <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2018/07/27/자주-사용하는-Docker-명령어-정리/" data-tooltip="자주 사용하는 Docker 명령어 정리" aria-label="PREVIOUS: 자주 사용하는 Docker 명령어 정리">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--disabled">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="_blank" href="https://www.facebook.com/sharer/sharer.php?u=https://hyunto.github.io/2018/07/26/Hexo-사용법/" title="Share on Facebook" rel="external nofollow noopener noreferrer">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="_blank" href="https://twitter.com/intent/tweet?text=https://hyunto.github.io/2018/07/26/Hexo-사용법/" title="Share on Twitter" rel="external nofollow noopener noreferrer">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="_blank" href="https://plus.google.com/share?url=https://hyunto.github.io/2018/07/26/Hexo-사용법/" title="Share on Google+" rel="external nofollow noopener noreferrer">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#" aria-label="Back to top">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+        
+        
+            
+                <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+            
+        
+    </div>
+</article>
+
+
+
+                <footer id="footer" class="main-content-wrap">
+    <span class="copyrights">
+        Copyrights &copy; 2019 hyunto. All Rights Reserved.
+    </span>
+</footer>
+
+            </div>
+            
+                <div id="bottom-bar" class="post-bottom-bar" data-behavior="2">
+                    
+<script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<script>
+  (adsbygoogle = window.adsbygoogle || []).push({
+    google_ad_client: "ca-pub-8873866934903362",
+    enable_page_level_ads: true
+  });
+</script>
+
+
+                    <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="/2018/07/27/자주-사용하는-Docker-명령어-정리/" data-tooltip="자주 사용하는 Docker 명령어 정리" aria-label="PREVIOUS: 자주 사용하는 Docker 명령어 정리">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    <a class="post-action-btn btn btn--disabled">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="_blank" href="https://www.facebook.com/sharer/sharer.php?u=https://hyunto.github.io/2018/07/26/Hexo-사용법/" title="Share on Facebook" rel="external nofollow noopener noreferrer">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="_blank" href="https://twitter.com/intent/tweet?text=https://hyunto.github.io/2018/07/26/Hexo-사용법/" title="Share on Twitter" rel="external nofollow noopener noreferrer">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="_blank" href="https://plus.google.com/share?url=https://hyunto.github.io/2018/07/26/Hexo-사용법/" title="Share on Google+" rel="external nofollow noopener noreferrer">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#" aria-label="Back to top">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+                </div>
+                <div id="share-options-bar" class="share-options-bar" data-behavior="2">
+    <i id="btn-close-shareoptions" class="fa fa-close"></i>
+    <ul class="share-options">
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="_blank" href="https://www.facebook.com/sharer/sharer.php?u=https://hyunto.github.io/2018/07/26/Hexo-사용법/" rel="external nofollow noopener noreferrer">
+                    <i class="fab fa-facebook" aria-hidden="true"></i><span>Share on Facebook</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="_blank" href="https://twitter.com/intent/tweet?text=https://hyunto.github.io/2018/07/26/Hexo-사용법/" rel="external nofollow noopener noreferrer">
+                    <i class="fab fa-twitter" aria-hidden="true"></i><span>Share on Twitter</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="_blank" href="https://plus.google.com/share?url=https://hyunto.github.io/2018/07/26/Hexo-사용법/" rel="external nofollow noopener noreferrer">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i><span>Share on Google+</span>
+                </a>
+            </li>
+        
+    </ul>
+</div>
+
+            
+        </div>
+        
+
+
+    
+        
+    
+
+<div id="about">
+    <div id="about-card">
+        <div id="about-btn-close">
+            <i class="fa fa-times"></i>
+        </div>
+        
+            <img id="about-card-picture" src="/assets/images/author.jpg" alt="Author&#39;s picture">
+        
+            <h4 id="about-card-name">hyunto</h4>
+        
+            <div id="about-card-bio"><p>호학심사(好學深思)<br>즐거이 배우고 깊이 생각하라</p>
+</div>
+        
+        
+            <div id="about-card-job">
+                <i class="fa fa-briefcase"></i>
+                <br>
+                <p>Software Engineer</p>
+
+            </div>
+        
+        
+            <div id="about-card-location">
+                <i class="fa fa-map-marker"></i>
+                <br>
+                Republic of Korea, Seoul
+            </div>
+        
+    </div>
+</div>
+
+        
+            <div id="algolia-search-modal" class="modal-container">
+    <div class="modal">
+        <div class="modal-header">
+            <span class="close-button"><i class="fa fa-close"></i></span>
+            <a href="https://algolia.com" target="_blank" rel="external nofollow noopener noreferrer" class="searchby-algolia text-color-light link-unstyled">
+                <span class="searchby-algolia-text text-color-light text-small">by</span>
+                <img class="searchby-algolia-logo" src="https://www.algolia.com/static_assets/images/press/downloads/algolia-light.svg">
+            </a>
+            <i class="search-icon fa fa-search"></i>
+            <form id="algolia-search-form">
+                <input type="text" id="algolia-search-input" name="search" class="form-control input--large search-input" placeholder="Search ">
+            </form>
+        </div>
+        <div class="modal-body">
+            <div class="no-result text-color-light text-center">no post found</div>
+            <div class="results">
+                
+                <div class="media">
+                    
+                    <div class="media-body">
+                        <a class="link-unstyled" href="https://hyunto.github.io/2018/07/26/Hexo-사용법/">
+                            <h3 class="media-heading">Hexo 사용법</h3>
+                        </a>
+                        <span class="media-meta">
+                            <span class="media-date text-small">
+                                
+                                    Jul 26, 2018
+                                
+                            </span>
+                        </span>
+                        <div class="media-content hide-xs font-merryweather"><p>2018년 초, Hexo를 사용해 이 블로그를 만들었으나 집, 회사 PC에서 블로그 Source를 다운받아 Deploy하는 과정에서 여러번 블로그를 망가뜨려 버렸습니다.<br>같은 실수를 반복하지 않기 위해 블로그 소스코드 다운, 빌드, 배포와 글을 작성하는 방법을 간단히 정리합니다.</p></div>
+                    </div>
+                    <div style="clear:both;"></div>
+                    <hr>
+                </div>
+                
+                <div class="media">
+                    
+                    <div class="media-body">
+                        <a class="link-unstyled" href="https://hyunto.github.io/2018/07/27/자주-사용하는-Docker-명령어-정리/">
+                            <h3 class="media-heading">자주 사용하는 Docker 명령어 정리</h3>
+                        </a>
+                        <span class="media-meta">
+                            <span class="media-date text-small">
+                                
+                                    Jul 27, 2018
+                                
+                            </span>
+                        </span>
+                        <div class="media-content hide-xs font-merryweather"><p>업무 중 자주 사용되는 Docker CLI명령어와 Dockerfile 키워드를 정리합니다.<br>또한 업무중 겪었던 Docker 관련 이슈를 정리합니다.</p></div>
+                    </div>
+                    <div style="clear:both;"></div>
+                    <hr>
+                </div>
+                
+                <div class="media">
+                    
+                    <div class="media-left">
+                        <a class="link-unstyled" href="https://hyunto.github.io/2018/11/16/Book-Review-자바-ORM-표준-JPA-프로그래밍/">
+                            <img class="media-image" src="https://hyunto.github.io/2018/11/16/Book-Review-자바-ORM-표준-JPA-프로그래밍/book_cover.png" width="90" height="90">
+                        </a>
+                    </div>
+                    
+                    <div class="media-body">
+                        <a class="link-unstyled" href="https://hyunto.github.io/2018/11/16/Book-Review-자바-ORM-표준-JPA-프로그래밍/">
+                            <h3 class="media-heading">[Book Review] 자바 ORM 표준 JPA 프로그래밍</h3>
+                        </a>
+                        <span class="media-meta">
+                            <span class="media-date text-small">
+                                
+                                    Nov 16, 2018
+                                
+                            </span>
+                        </span>
+                        <div class="media-content hide-xs font-merryweather"><p>자바 ORM 표준 JPA 프로그래밍 (2015) 독서/스터디 후기</p></div>
+                    </div>
+                    <div style="clear:both;"></div>
+                    <hr>
+                </div>
+                
+                <div class="media">
+                    
+                    <div class="media-body">
+                        <a class="link-unstyled" href="https://hyunto.github.io/2018/12/03/Java8-Behavior-Parameterization/">
+                            <h3 class="media-heading">동작 파라미터화 (Behavior Parameterization)</h3>
+                        </a>
+                        <span class="media-meta">
+                            <span class="media-date text-small">
+                                
+                                    Dec 3, 2018
+                                
+                            </span>
+                        </span>
+                        <div class="media-content hide-xs font-merryweather"><p><code>동작 파라미터화 (Behavior Parameterization)</code> 는 “다양한 동작을 수행할 수 있는 코드 블럭을 메서드 파라미터로 전달”함으로써 자주 변경되는 요구사항에 효과적으로 대응할 수 있는 방식을 의미합니다.</p>
+<p>여기서는 자주 변경되는 요구사항의 예시를 기반으로 동작 파라미터화를 한 후 Java8에서 추가된 Lambda로 코드를 간소화하는 과정을 보여줍니다.</p></div>
+                    </div>
+                    <div style="clear:both;"></div>
+                    <hr>
+                </div>
+                
+                <div class="media">
+                    
+                    <div class="media-body">
+                        <a class="link-unstyled" href="https://hyunto.github.io/2018/12/11/git-secret/">
+                            <h3 class="media-heading">git-secret</h3>
+                        </a>
+                        <span class="media-meta">
+                            <span class="media-date text-small">
+                                
+                                    Dec 11, 2018
+                                
+                            </span>
+                        </span>
+                        <div class="media-content hide-xs font-merryweather"><p>비밀번호, Secret Key 값과 같이 보호되야 하는 데이터가 포함된 파일을 그냥 Git Commit &amp; Push 하면 개인적인 데이터가 노출되는 문제점이 발생합니다.</p>
+<p><code>git-secret</code> 을 사용하면 개인적인 데이터가 포함된 파일을 암호화 한 후에 Git 저장소에 저장함으로써 문제점을 해결할 수 있습니다.</p></div>
+                    </div>
+                    <div style="clear:both;"></div>
+                    <hr>
+                </div>
+                
+                <div class="media">
+                    
+                    <div class="media-body">
+                        <a class="link-unstyled" href="https://hyunto.github.io/2019/01/15/introduction-to-oauth2.0/">
+                            <h3 class="media-heading">OAuth 2.0 - 기본개념 및 Authorization Grant</h3>
+                        </a>
+                        <span class="media-meta">
+                            <span class="media-date text-small">
+                                
+                                    Jan 15, 2019
+                                
+                            </span>
+                        </span>
+                        <div class="media-content hide-xs font-merryweather"><p>최근 OAuth 2.0에 대해 공부하면서 다양한 Grant 종류가 존재함을 알게 되었습니다.<br>기본 개념과 Grant 종류에 대해 잘 정리되어 OAuth 2.0 이해에 도움됬던 사이트들의 내용을 정리합니다.</p></div>
+                    </div>
+                    <div style="clear:both;"></div>
+                    <hr>
+                </div>
+                
+                <div class="media">
+                    
+                    <div class="media-body">
+                        <a class="link-unstyled" href="https://hyunto.github.io/2019/02/11/java8-lambda/">
+                            <h3 class="media-heading">람다 표현식 (Lambda Expression)</h3>
+                        </a>
+                        <span class="media-meta">
+                            <span class="media-date text-small">
+                                
+                                    Feb 11, 2019
+                                
+                            </span>
+                        </span>
+                        <div class="media-content hide-xs font-merryweather"><p>Java8에서 새롭게 추가된 람다 표현식을 정리합니다.</p></div>
+                    </div>
+                    <div style="clear:both;"></div>
+                    <hr>
+                </div>
+                
+                <div class="media">
+                    
+                    <div class="media-body">
+                        <a class="link-unstyled" href="https://hyunto.github.io/2019/02/12/java8-stream-basic/">
+                            <h3 class="media-heading">스트림(Stream) 소개</h3>
+                        </a>
+                        <span class="media-meta">
+                            <span class="media-date text-small">
+                                
+                                    Feb 12, 2019
+                                
+                            </span>
+                        </span>
+                        <div class="media-content hide-xs font-merryweather"><p>Java8에서 새로 추가된 스트림의 기초를 정리합니다.</p></div>
+                    </div>
+                    <div style="clear:both;"></div>
+                    <hr>
+                </div>
+                
+                <div class="media">
+                    
+                    <div class="media-body">
+                        <a class="link-unstyled" href="https://hyunto.github.io/2019/02/17/java8-stream-practice/">
+                            <h3 class="media-heading">스트림(Stream) 활용</h3>
+                        </a>
+                        <span class="media-meta">
+                            <span class="media-date text-small">
+                                
+                                    Feb 17, 2019
+                                
+                            </span>
+                        </span>
+                        <div class="media-content hide-xs font-merryweather"><p>Java8 Stream 활용 방안을 정리합니다.</p></div>
+                    </div>
+                    <div style="clear:both;"></div>
+                    <hr>
+                </div>
+                
+                <div class="media">
+                    
+                    <div class="media-body">
+                        <a class="link-unstyled" href="https://hyunto.github.io/2019/03/13/springframework-testing-private-method/">
+                            <h3 class="media-heading">Private 메소드 테스트하기</h3>
+                        </a>
+                        <span class="media-meta">
+                            <span class="media-date text-small">
+                                
+                                    Mar 13, 2019
+                                
+                            </span>
+                        </span>
+                        <div class="media-content hide-xs font-merryweather"><p>단위 테스트 작성시 Private 접근자를 가진 메소드를 테스트하는 방법을 정리합니다.</p></div>
+                    </div>
+                    <div style="clear:both;"></div>
+                    <hr>
+                </div>
+                
+            </div>
+        </div>
+        <div class="modal-footer">
+            <p class="results-count text-medium" data-message-zero="no post found" data-message-one="1 post found" data-message-other="{n} posts found">
+                10 posts found
+            </p>
+        </div>
+    </div>
+</div>
+
+        
+        
+<div id="cover" style="background-image:url('/assets/images/cover_the_legend_of_zelda.jpg');"></div>
+        <!--SCRIPTS-->
+<script src="/assets/js/script-x2vft4khydnm3fle5k6i00lpg0w2a1yxes6bmk6mdnvmeqzmtipaw6lhf8rx.min.js"></script>
+<!--SCRIPTS END-->
+
+    
+        <script>
+             var disqus_config = function () {
+                 this.page.url = 'https://hyunto.github.io/2018/07/26/Hexo-사용법/';
+                 
+                    this.page.identifier = '2018/07/26/Hexo-사용법/';
+                 
+             };
+            (function() {
+                var d = document, s = d.createElement('script');
+                var disqus_shortname = 'hyunto';
+                s.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+
+                s.setAttribute('data-timestamp', +new Date());
+                (d.head || d.body).appendChild(s);
+            })();
+        </script>
+    
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.14.1/moment-with-locales.min.js"></script>
+    <script src="//cdn.jsdelivr.net/algoliasearch/3/algoliasearch.min.js"></script>
+    <script>
+        var algoliaClient = algoliasearch('XKYZJU6GUU', '6f712de882b0c14f1ba276f5970d1d44');
+        var algoliaIndex = algoliaClient.initIndex('hyunto.github.io');
+    </script>
+
+
+    </body>
+</html>
